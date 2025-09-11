@@ -1,0 +1,6 @@
+@dengue_watch_api_HostAddress = http://localhost:5267
+
+GET {{dengue_watch_api_HostAddress}}/health/
+Accept: application/json
+
+###
