@@ -4,12 +4,12 @@ namespace dengue.watch.api.features.weatherpooling.services;
 
 public interface IWeatherDateService
 {
-    DateTime? ExtractFirstDailyDate(WeatherForecastResponse response);
+    DateTime? ExtractFirstDailyDate(WeatherHistoricalResponse response);
 }
 
 public class WeatherDateService : IWeatherDateService
 {
-    public DateTime? ExtractFirstDailyDate(WeatherForecastResponse response)
+    public DateTime? ExtractFirstDailyDate(WeatherHistoricalResponse response)
     {
         if (response == null || response.Daily == null || response.Daily.Time == null || response.Daily.Time.Count == 0)
         {

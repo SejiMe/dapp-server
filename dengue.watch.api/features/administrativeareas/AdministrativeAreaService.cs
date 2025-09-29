@@ -65,11 +65,20 @@ public class AdministrativeAreaService : IAdministrativeAreaService
     public async Task<IEnumerable<AdministrativeAreaDto>> GetCitiesByProvinceAsync(string provincePsgcCode, CancellationToken cancellationToken = default)
     {
         var provincePrefix = GetProvincePrefix(provincePsgcCode);
-        return await _context.AdministrativeAreas
+
+        var provinces = await _context.AdministrativeAreas
             .Where(a => a.GeographicLevel.ToLower() == "city" && a.PsgcCode.StartsWith(provincePrefix))
             .OrderBy(a => a.PsgcCode)
             .Select(a => new AdministrativeAreaDto(a.PsgcCode, a.Name, a.GeographicLevel, a.Latitude, a.Longitude))
             .ToListAsync(cancellationToken);
+
+        // Because City of Zamboanga is considered as a Highly Urbanized City (HUC), it is not included in the province's cities.
+        // We need to add it manually.
+        if (provincePrefix.StartsWith("09730"))
+        {
+            provinces.Add(new AdministrativeAreaDto("0931700000", "City of Zamboanga", "City", 6.9214m, 122.079m));
+        }
+        return provinces;
     }
 
     public async Task<IEnumerable<AdministrativeAreaDto>> GetMunicipalitiesAsync(CancellationToken cancellationToken = default)

@@ -5,10 +5,10 @@ namespace dengue.watch.api.features.weatherpooling.services;
 
 public interface IWeatherDataAPI
 {
-    Task<ByteBuffer> GetForecastDataAsByteBufferAsync(decimal latitude, decimal longitude);
-    // Treat it as Command Pattern here as for a request object
-    Task<WeatherForecastResponse> GetForecastDataAsync(decimal latitude, decimal longitude);
+    Task<WeatherHistoricalResponse> GetHistoricalDataAsync(decimal latitude, decimal longitude,CancellationToken cancellationToken, DateOnly? date);
 
-    Task<ByteBuffer> GetHistoricalDataAsync(decimal latitude, decimal longitude);
+    Task<WeatherHistoricalResponse> GetHistoricalLongDataAsync(
+        decimal latitude, decimal longitude, CancellationToken cancellationToken,
+        DateOnly startDate, DateOnly endDate);
 
 }
