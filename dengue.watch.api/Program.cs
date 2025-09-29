@@ -18,6 +18,10 @@ using dengue.watch.api.common.extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Removes the default header kestrel from response
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+
+
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
@@ -33,6 +37,16 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+#if DEBUG
+    builder.WebHost.UseUrls("http://0.0.0.0:5000");
+    builder.WebHost.UseKestrel(options =>
+    {
+        options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10);
+        options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(10);
+        
+    });
+#endif
 
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
@@ -52,6 +66,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
     var connectionString = pgOptions.ToSessionPoolingConnectionString();
     options.UseNpgsql(connectionString);
 });
+
 
 
 
@@ -114,8 +129,8 @@ if (!string.IsNullOrEmpty(jwtSecret))
 builder.Services.AddAuthorization();
 builder.Services.AddOpenMeteo();
 
-// Discover and register features using reflection
-builder.Services.DiscoverFeatures(Assembly.GetExecutingAssembly());
+// Discover and register features using reflection (pass configuration)
+builder.Services.DiscoverFeatures(Assembly.GetExecutingAssembly(), builder.Configuration);
 
 
 var app = builder.Build();
