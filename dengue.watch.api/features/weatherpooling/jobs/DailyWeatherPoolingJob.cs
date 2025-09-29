@@ -27,30 +27,33 @@ public class DailyWeatherPoolingJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        _logger.LogInformation("Starting DailyWeatherPoolingJob at {Time}", DateTimeOffset.UtcNow);
-
-        // Example barangay list with PSGC, lat, long
+        _logger.LogInformation("Starting Fetch 1 day Historical Weather Data at {Time}", DateTimeOffset.UtcNow);
         
+        var cancellationToken = context.CancellationToken;
+        // Example barangay list with PSGC, lat, long
         var barangays = await _db.AdministrativeAreas
         .Where(x => x.GeographicLevel == "Bgy" && x.Latitude.HasValue && x.Longitude.HasValue)
-        .Select(x => new WeatherForecastRequest(x.PsgcCode, (decimal)x.Latitude!, (decimal)x.Longitude!))
-        .ToListAsync();
+        .Select(x => new WeatherHistoricalRequest(x.PsgcCode, (decimal)x.Latitude!, (decimal)x.Longitude!))
+        .ToListAsync(cancellationToken);
 
         foreach (var (psgc, lat, lon) in barangays)
         {
             try
             {
+                // TODO refactoring
+                // eto yung nag eextract ng data sa may Open Meteo API
 
-                var apiResponse = await _weatherDataApi.GetForecastDataAsync(lat, lon);
-                var dayMinus1 = _processor.GetDayMinus1Data(apiResponse);
-                dayMinus1.FK_PsgcCode = psgc;
-                var dateToCheck = DateTime.SpecifyKind(dayMinus1.Date, DateTimeKind.Utc);
+                var apiResponse = await _weatherDataApi.GetHistoricalDataAsync(lat, lon, cancellationToken, null);
+                var dayData = _processor.Get1DayData(apiResponse);
+                dayData.FK_PsgcCode = psgc;
+                var dateToCheck = DateTime.SpecifyKind(dayData.Date, DateTimeKind.Utc);
                 // Validation: skip if record exists for date and PSGC
                 var exists = await _db.DailyWeather
-                    .AnyAsync(x => x.Date == dateToCheck && x.PsgcCode == psgc);
+                    .AnyAsync(x => x.Date == dateToCheck && x.PsgcCode == psgc, cancellationToken);
+
                 if (exists)
                 {
-                    _logger.LogInformation("Daily weather already exists for {Date} {Psgc}", dayMinus1.Date, psgc);
+                    _logger.LogInformation("Daily weather already exists for {Date} {Psgc}", dayData.Date, psgc);
                     continue;
                 }
 
@@ -59,10 +62,10 @@ public class DailyWeatherPoolingJob : IJob
                 {
                     Date = dateToCheck,
                     PsgcCode = psgc,
-                    WeatherCodeId = dayMinus1.WeatherCode,
-                    Temperature = (float)dayMinus1.TemperatureMean,
-                    Precipitation = (float)dayMinus1.PrecipitationSum,
-                    Humidity = (float)dayMinus1.RelativeHumidityMean
+                    WeatherCodeId = dayData.WeatherCode,
+                    Temperature = (float)dayData.TemperatureMean,
+                    Precipitation = (float)dayData.PrecipitationSum,
+                    Humidity = (float)dayData.RelativeHumidityMean
                 };
 
                 _db.DailyWeather.Add(entity);

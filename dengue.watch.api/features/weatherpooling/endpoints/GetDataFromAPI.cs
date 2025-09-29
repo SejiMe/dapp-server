@@ -20,10 +20,13 @@ public class GetDataFromAPI : IEndpoint
 
     private static async Task<IResult> DataFetchingHandler(
         [FromServices] IWeatherDataAPI weatherDataAPI,
+        [FromQuery] decimal latitude,
+        [FromQuery] decimal longitude,
+        [FromQuery] DateOnly? date,
         // [FromServices] WeatherDataProcessor weatherDataProcessor,
         CancellationToken cancellationToken)
     {
-        var data = await weatherDataAPI.GetForecastDataAsync(6.9198m, 122.1533m);
+        var data = await weatherDataAPI.GetHistoricalDataAsync(latitude, longitude, cancellationToken, date);
 
         var dataRaw = data;
         return Results.Ok(dataRaw);

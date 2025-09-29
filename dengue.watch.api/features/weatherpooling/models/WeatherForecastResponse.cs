@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-public class WeatherForecastResponse
+public class WeatherHistoricalResponse
 {
     [JsonPropertyName("latitude")]
     public double Latitude { get; set; }

@@ -25,7 +25,7 @@ public class ManualTriggerAPIPooling : IEndpoint
     private static async Task<IResult> ManuallyTriggerWeatherPooling([FromServices] ISchedulerFactory schedulerFactory)
     {
         var scheduler = await schedulerFactory.GetScheduler();
-        JobKey jobKey = new("DailyWeatherPoolingJob");
+        JobKey jobKey = new("Fetch 1 day Historical Weather Data");
         await scheduler.TriggerJob(jobKey);
         return Results.Ok("Weather pooling job triggered");
     }
