@@ -1,5 +1,6 @@
 using System.Reflection;
 using dengue.watch.api.common.interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace dengue.watch.api.common.extensions;
 
@@ -27,6 +28,52 @@ public static class ServiceDiscoveryExtensions
             try
             {
                 var configureMethod = featureType.GetMethod("ConfigureServices", 
+                    BindingFlags.Public | BindingFlags.Static,
+                    null,
+                    [typeof(IServiceCollection)],
+                    null);
+
+                if (configureMethod != null)
+                {
+                    configureMethod.Invoke(null, [services]);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to configure feature {featureType.Name}: {ex.Message}", ex);
+            }
+        }
+
+        return services;
+    }
+
+    public static IServiceCollection DiscoverFeatures(this IServiceCollection services, Assembly? assembly, IConfiguration configuration)
+    {
+        assembly ??= Assembly.GetCallingAssembly();
+
+        var featureTypes = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.GetInterfaces().Contains(typeof(IFeature)))
+            .ToList();
+
+        foreach (var featureType in featureTypes)
+        {
+            try
+            {
+                // Prefer overload that accepts IConfiguration
+                var configureWithConfig = featureType.GetMethod("ConfigureServices",
+                    BindingFlags.Public | BindingFlags.Static,
+                    null,
+                    [typeof(IServiceCollection), typeof(IConfiguration)],
+                    null);
+
+                if (configureWithConfig != null)
+                {
+                    configureWithConfig.Invoke(null, [services, configuration]);
+                    continue;
+                }
+
+                // Fallback to IServiceCollection-only overload
+                var configureMethod = featureType.GetMethod("ConfigureServices",
                     BindingFlags.Public | BindingFlags.Static,
                     null,
                     [typeof(IServiceCollection)],
