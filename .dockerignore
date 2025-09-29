@@ -1,0 +1,26 @@
+# VCS and IDE
+.git
+.gitignore
+.vs
+.vscode
+
+# Build outputs
+**/bin/
+**/obj/
+
+# User files
+**/*.user
+**/*.suo
+
+# Logs and temp
+logs/
+**/*.log
+**/*.swp
+**/*.tmp
+
+# Node/npm (if present)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
