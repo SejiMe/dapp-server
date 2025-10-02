@@ -178,7 +178,6 @@ public static class EntityModelConfiguration
 		modelBuilder.Entity<WeeklyDengueCase>(entity =>
 		{
 			entity.ToTable("weekly_dengue_cases");
-			entity.HasIndex(x => new { x.Year, x.WeekNumber, x.PsgcCode }).IsUnique();
 			entity.Property(p => p.PsgcCode).HasColumnName("psgc_code");
 			entity.Property(p => p.Year).HasColumnName("year");
 			entity.Property(p => p.WeekNumber).HasColumnName("week_number");
