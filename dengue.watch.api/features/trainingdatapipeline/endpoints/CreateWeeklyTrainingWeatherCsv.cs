@@ -41,8 +41,8 @@ public sealed class CreateWeeklyTrainingWeatherCsv : IEndpoint
         }
 
         var weekRange = request.WeekRange is null
-            ? (int From, int To)? null
-            : (request.WeekRange.From, request.WeekRange.To);
+    ? (1, 53)
+    : (request.WeekRange.From, request.WeekRange.To);
 
         var result = await repository.GetWeeklySnapshotsAsync(
             request.PsgcCode,
