@@ -3,6 +3,8 @@ namespace dengue.watch.api.features.trainingdatapipeline.models;
 public sealed record TrainingDataWeatherRequest
 {
     public required string PsgcCode { get; init; }
+
+    public required bool isPsgcExcludedInResult { get; init; }
     public required IReadOnlyCollection<int> Years { get; init; }
     public int? WeekNumber { get; init; }
     public WeekRangeFilter? WeekRange { get; init; }

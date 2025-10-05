@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using dengue.watch.api.common.exceptions;
 using dengue.watch.api.features.trainingdatapipeline.models;
 using dengue.watch.api.features.trainingdatapipeline.services;
 using dengue.watch.api.infrastructure.database;
@@ -28,11 +25,12 @@ public interface IWeeklyTrainingWeatherRepository
 
 public class WeeklyTrainingWeatherRepository : IWeeklyTrainingWeatherRepository
 {
+    //
     private const string BaseSelectSql = "SELECT " +
         "we.main_description AS \"WeatherMainDescription\", " +
         "a.weather_code_id AS \"WeatherCodeId\", " +
         "CAST(DATE_PART('week', a.date) AS INT) AS \"WeekNumber\", " +
-        "CAST(DATE_PART('year', a.date) AS INT) AS \"Year\", " +
+        "CAST(DATE_PART('isoyear', a.date) AS INT) AS \"Year\", " +
         "a.date AS \"Date\", " +
         "a.temperature AS \"Temperature\", " +
         "a.precipitation AS \"Precipitation\", " +
@@ -40,7 +38,7 @@ public class WeeklyTrainingWeatherRepository : IWeeklyTrainingWeatherRepository
         "FROM public.daily_weather AS a " +
         "LEFT JOIN weather_codes AS we ON we.id = a.weather_code_id " +
         "WHERE a.psgc_code = @psgc_code " +
-        "AND DATE_PART('year', a.date) = ANY(@years) ";
+        "AND DATE_PART('isoyear', a.date) = ANY(@years) ";
 
     private readonly ApplicationDbContext _dbContext;
     private readonly IWeekExtractorService _weekExtractor;
@@ -294,8 +292,11 @@ public class WeeklyTrainingWeatherRepository : IWeeklyTrainingWeatherRepository
         {
             return new List<RawWeatherRow>();
         }
-
+        
         var lagYears = lagWeeks.Select(lag => lag.Year).Distinct().ToArray();
+        // Check lag years if it is a leap year with 53 weeks
+        bool IsLeapYear = DateTime.IsLeapYear(lagYears[0]);
+
         var minWeek = lagWeeks.Min(lag => lag.WeekNumber);
         var maxWeek = lagWeeks.Max(lag => lag.WeekNumber);
 

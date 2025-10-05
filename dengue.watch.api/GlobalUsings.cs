@@ -6,3 +6,4 @@ global using dengue.watch.api.common.exceptions;
 global using dengue.watch.api.infrastructure.database;
 global using dengue.watch.api.infrastructure.ml;
 global using Microsoft.EntityFrameworkCore;
+global using Microsoft.AspNetCore.Mvc;

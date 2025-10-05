@@ -39,7 +39,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 #if DEBUG
-    builder.WebHost.UseUrls("http://0.0.0.0:5000");
+     builder.WebHost.UseUrls("http://0.0.0.0:5001");
     builder.WebHost.UseKestrel(options =>
     {
         options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10);
