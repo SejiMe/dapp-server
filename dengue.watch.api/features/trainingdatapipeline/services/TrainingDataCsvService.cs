@@ -6,15 +6,16 @@ namespace dengue.watch.api.features.trainingdatapipeline.services;
 
 public interface ITrainingDataCsvService
 {
-    TrainingDataCsvFileResult CreateCsv(WeeklyTrainingWeatherResult weeklyResult);
+    TrainingDataCsvFileResult CreateCsv(WeeklyTrainingWeatherResult weeklyResult, bool isPgscCodeExcluded);
 }
 
 public sealed class TrainingDataCsvService : ITrainingDataCsvService
 {
     private const string ContentType = "text/csv";
-    private const string DateFormat = "yyyy-MM-dd";
+    private const string DateFormat = "MM-dd-yyyy";
     private const string DefaultFileName = "weekly-training-data.csv";
-    private static readonly string[] HeaderColumns =
+    private const string DecimalFormat = "{0:F2}";
+    private static string[] HeaderColumns =
     {
         "PsgcCode",
         "DengueYear",
@@ -36,16 +37,17 @@ public sealed class TrainingDataCsvService : ITrainingDataCsvService
         "IsWetWeek"
     };
 
-    public TrainingDataCsvFileResult CreateCsv(WeeklyTrainingWeatherResult weeklyResult)
+    public TrainingDataCsvFileResult CreateCsv(WeeklyTrainingWeatherResult weeklyResult, bool isPgscCodeExcluded)
     {
         ArgumentNullException.ThrowIfNull(weeklyResult);
-
+        
         var builder = new StringBuilder();
-        WriteHeader(builder);
+
+        WriteHeader(builder, isPgscCodeExcluded);
 
         foreach (var snapshot in weeklyResult.Snapshots)
         {
-            WriteSnapshotLine(builder, snapshot);
+            WriteSnapshotLine(builder, snapshot, isPgscCodeExcluded);
         }
 
         if (weeklyResult.MissingLagWeeks.Count > 0)
@@ -60,30 +62,33 @@ public sealed class TrainingDataCsvService : ITrainingDataCsvService
         }
 
         var content = Encoding.UTF8.GetBytes(builder.ToString());
+
         return new TrainingDataCsvFileResult(DefaultFileName, ContentType, content);
     }
 
-    private static void WriteHeader(StringBuilder builder)
+    private static void WriteHeader(StringBuilder builder, bool isPgscCodeExcluded)
     {
-        builder.AppendLine(string.Join(',', HeaderColumns));
+        builder.AppendLine(string.Join(',',  isPgscCodeExcluded ? HeaderColumns[1..] : HeaderColumns));
     }
 
-    private static void WriteSnapshotLine(StringBuilder builder, WeeklyTrainingWeatherSnapshot snapshot)
+    private static void WriteSnapshotLine(StringBuilder builder, WeeklyTrainingWeatherSnapshot snapshot, bool isPgscCodeExcluded)
     {
+        if (!isPgscCodeExcluded)
+            builder.Append(EscapeCsvValue(snapshot.PsgcCode)).Append(',');
+
         builder
-            .Append(EscapeCsvValue(snapshot.PsgcCode)).Append(',')
             .Append(snapshot.DengueYear).Append(',')
             .Append(snapshot.DengueWeekNumber).Append(',')
             .Append(snapshot.DengueCaseCount).Append(',')
             .Append(snapshot.LagYear).Append(',')
             .Append(snapshot.LagWeekNumber).Append(',')
             .Append(snapshot.LagWeekStartDate.ToString(DateFormat, CultureInfo.InvariantCulture)).Append(',')
-            .AppendFormat(CultureInfo.InvariantCulture, "{0:F2}", snapshot.Temperature.Mean).Append(',')
-            .AppendFormat(CultureInfo.InvariantCulture, "{0:F2}", snapshot.Temperature.Max).Append(',')
-            .AppendFormat(CultureInfo.InvariantCulture, "{0:F2}", snapshot.Humidity.Mean).Append(',')
-            .AppendFormat(CultureInfo.InvariantCulture, "{0:F2}", snapshot.Humidity.Max).Append(',')
-            .AppendFormat(CultureInfo.InvariantCulture, "{0:F2}", snapshot.Precipitation.Mean).Append(',')
-            .AppendFormat(CultureInfo.InvariantCulture, "{0:F2}", snapshot.Precipitation.Max).Append(',')
+            .AppendFormat(CultureInfo.InvariantCulture, DecimalFormat, snapshot.Temperature.Mean).Append(',')
+            .AppendFormat(CultureInfo.InvariantCulture, DecimalFormat, snapshot.Temperature.Max).Append(',')
+            .AppendFormat(CultureInfo.InvariantCulture, DecimalFormat, snapshot.Humidity.Mean).Append(',')
+            .AppendFormat(CultureInfo.InvariantCulture, DecimalFormat, snapshot.Humidity.Max).Append(',')
+            .AppendFormat(CultureInfo.InvariantCulture, DecimalFormat, snapshot.Precipitation.Mean).Append(',')
+            .AppendFormat(CultureInfo.InvariantCulture, DecimalFormat, snapshot.Precipitation.Max).Append(',')
             .Append(snapshot.MostCommonWeatherCodeId).Append(',')
             .Append(EscapeCsvValue(snapshot.MostCommonWeatherDescription)).Append(',')
             .Append(snapshot.OccurrenceCount).Append(',')

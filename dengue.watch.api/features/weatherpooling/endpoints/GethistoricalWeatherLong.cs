@@ -29,8 +29,8 @@ public class GetHistoricalWeatherLong : IEndpoint
         CancellationToken cancellationToken)
     {
         // Set start and end date
-        DateOnly startDate = new(2014, 11, 1);
-        DateOnly endDate = new(2014, 12, 31);
+        DateOnly startDate = new(2012, 1, 1);
+        DateOnly endDate = new(2012, 12, 31);
         // Get psgc code based on latitude and longitude
         var psgcCode = await _db.AdministrativeAreas
         .Where(x => x.Latitude == latitude && x.Longitude == longitude)
@@ -49,7 +49,7 @@ public class GetHistoricalWeatherLong : IEndpoint
             // Loop through each day and insert data into database  
             while (count < maxCount)
             {
-                var weatherDate = weatherDatas.Daily.Time[count];
+                var weatherDate = weatherDatas.Daily.Time[count];   
                 var weatherCode = weatherDatas.Daily.WeatherCode[count];
                 var dateToCheck = DateTime.SpecifyKind(weatherDate, DateTimeKind.Utc);
 
