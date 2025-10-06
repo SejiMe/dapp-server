@@ -79,6 +79,10 @@ builder.Services.AddProblemDetails();
 // Add Global Exception Handler
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+
+// Add the Prediction Engine
+builder.Services.AddMLPredictionEngine(builder.Environment);
+
 // Add CORS
 builder.Services.AddCors(options =>
 {
