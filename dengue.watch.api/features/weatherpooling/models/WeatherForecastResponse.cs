@@ -19,65 +19,65 @@ public class WeatherHistoricalResponse
     public int UtcOffsetSeconds { get; set; }
 
     [JsonPropertyName("timezone")]
-    public string Timezone { get; set; }
+    public string Timezone { get; set; } = string.Empty;
 
     [JsonPropertyName("timezone_abbreviation")]
-    public string TimezoneAbbreviation { get; set; }
+    public string TimezoneAbbreviation { get; set; } = string.Empty;
 
     [JsonPropertyName("elevation")]
     public double Elevation { get; set; }
 
     [JsonPropertyName("daily_units")]
-    public DailyUnits DailyUnits { get; set; }
+    public DailyUnits DailyUnits { get; set; } = null!;
 
     [JsonPropertyName("daily")]
-    public Daily Daily { get; set; }
+    public Daily Daily { get; set; } = null!;
 }
 
 public class DailyUnits
 {
     [JsonPropertyName("time")]
-    public string Time { get; set; }
+    public string Time { get; set; } = string.Empty;
 
     [JsonPropertyName("weather_code")]
-    public string WeatherCode { get; set; }
+    public string WeatherCode { get; set; } = string.Empty;
 
     [JsonPropertyName("precipitation_sum")]
-    public string PrecipitationSum { get; set; }
+    public string PrecipitationSum { get; set; } = string.Empty;
 
     [JsonPropertyName("precipitation_hours")]
-    public string PrecipitationHours { get; set; }
+    public string PrecipitationHours { get; set; } = string.Empty;
 
     [JsonPropertyName("rain_sum")]
-    public string RainSum { get; set; }
+    public string RainSum { get; set; } = string.Empty;
 
     [JsonPropertyName("relative_humidity_2m_mean")]
-    public string RelativeHumidity2mMean { get; set; }
+    public string RelativeHumidity2mMean { get; set; } = string.Empty;
 
     [JsonPropertyName("temperature_2m_mean")]
-    public string Temperature2mMean { get; set; }
+    public string Temperature2mMean { get; set; } = string.Empty;
 }
 
 public class Daily
 {
     [JsonPropertyName("time")]
-    public List<DateTime> Time { get; set; }
+    public List<DateTime> Time { get; set; } = new();
 
     [JsonPropertyName("weather_code")]
-    public List<int> WeatherCode { get; set; }
+    public List<int> WeatherCode { get; set; } = new();
 
     [JsonPropertyName("precipitation_sum")]
-    public List<double> PrecipitationSum { get; set; }
+    public List<double> PrecipitationSum { get; set; } = new();
 
     [JsonPropertyName("precipitation_hours")]
-    public List<double> PrecipitationHours { get; set; }
+    public List<double> PrecipitationHours { get; set; } = new();
 
     [JsonPropertyName("rain_sum")]
-    public List<double> RainSum { get; set; }
+    public List<double> RainSum { get; set; } = new();
 
     [JsonPropertyName("relative_humidity_2m_mean")]
-    public List<int> RelativeHumidity2mMean { get; set; }
+    public List<int> RelativeHumidity2mMean { get; set; } = new();
 
     [JsonPropertyName("temperature_2m_mean")]
-    public List<double> Temperature2mMean { get; set; }
+    public List<double> Temperature2mMean { get; set; } = new();
 }

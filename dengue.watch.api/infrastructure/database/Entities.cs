@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -31,6 +32,8 @@ public class AdministrativeArea
 	public ICollection<WeeklyDengueCase> WeeklyDengueCases { get; set; } = new List<WeeklyDengueCase>();
 	public ICollection<MonthlyDengueCase> MonthlyDengueCases { get; set; } = new List<MonthlyDengueCase>();
 	public ICollection<DailyWeather> DailyWeather { get; set; } = new List<DailyWeather>();
+	public ICollection<PredictedWeeklyDengueCase> PredictedWeeklyDengueCases { get; set; } = new List<PredictedWeeklyDengueCase>();
+
 }
 
 /// <summary>
@@ -133,6 +136,37 @@ public class MonthlyDengueCase
 	public int CaseCount { get; set; }
 }
 
+
+/// <summary>
+/// weekly dengue cases per location/month
+/// </summary>
+public class PredictedWeeklyDengueCase
+{
+	[Key]
+	[DatabaseGenerated(DatabaseGeneratedOption.None)]
+	public Guid PredictionId { get; set; }
+
+	[Required]
+	[Range(1, 53)]
+	public int IsoWeek { get; set; }
+
+	[Required]
+	public int Year { get; set; }
+
+	[Required]
+	public int PredictedValue { get; set; }
+
+	[Required]
+	public DateOnly PredictedDate { get; set; }
+
+	[Required]
+	[MaxLength(10)]
+	public string PsgcCode { get; set; } = string.Empty;
+
+	[ForeignKey(nameof(PsgcCode))]
+	public AdministrativeArea? AdministrativeArea { get; set; }
+
+}
 public static class EntityModelConfiguration
 {
 	public static void ConfigureEntities(this ModelBuilder modelBuilder)
@@ -200,6 +234,22 @@ public static class EntityModelConfiguration
 				.WithMany(a => a.MonthlyDengueCases)
 				.HasForeignKey(m => m.PsgcCode)
 				.OnDelete(DeleteBehavior.Restrict);
+		});
+
+		modelBuilder.Entity<PredictedWeeklyDengueCase>(entity =>
+		{
+			entity.ToTable("predicted_weekly_dengue_cases");
+			entity.Property(p => p.PredictionId)
+			.HasColumnName("prediction_id")
+			.HasValueGenerator<Guid7ValueGeneratorExtension>();
+			entity.Property(p => p.IsoWeek).HasColumnName("iso_week");
+			entity.Property(p => p.Year).HasColumnName("iso_year");
+			entity.Property(p => p.PredictedDate).HasColumnName("predicted_date");
+			entity.Property(p => p.PredictedValue).HasColumnName("predicted_value");
+			entity.HasOne(m => m.AdministrativeArea)
+			.WithMany(a => a.PredictedWeeklyDengueCases)
+			.HasForeignKey(m => m.PsgcCode)
+			.OnDelete(DeleteBehavior.Restrict);
 		});
 	}
 }
