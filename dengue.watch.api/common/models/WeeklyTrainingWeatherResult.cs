@@ -1,5 +1,5 @@
 
-namespace dengue.watch.api.features.trainingdatapipeline.models;
+namespace dengue.watch.api.common.models;
 
 public sealed record WeeklyTrainingWeatherResult(
     IReadOnlyCollection<WeeklyTrainingWeatherSnapshot> Snapshots,

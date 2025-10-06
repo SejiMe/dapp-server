@@ -1,4 +1,4 @@
-using dengue.watch.api.features.trainingdatapipeline.repositories;
+
 using dengue.watch.api.features.trainingdatapipeline.services;
 
 namespace dengue.watch.api.features.trainingdatapipeline;
@@ -14,7 +14,7 @@ public class TrainingDataPipeline : IFeature {
         services.AddScoped<IWeatherCodeStatisticsService, WeatherCodeStatisticsService>();
         services.AddScoped<ITrainingDataWeeklyStatisticsService, TrainingDataWeeklyStatisticsService>();
         services.AddScoped<ITrainingDataCsvService, TrainingDataCsvService>();
-        services.AddScoped<IWeeklyTrainingWeatherRepository, WeeklyTrainingWeatherRepository>();
+        services.AddScoped<IAggregatedWeeklyHistoricalWeatherRepository, AggregatedWeeklyHistoricalWeatherRepository>();
 
         return services;
     }

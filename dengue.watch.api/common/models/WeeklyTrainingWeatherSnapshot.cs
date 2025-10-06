@@ -1,4 +1,4 @@
-namespace dengue.watch.api.features.trainingdatapipeline.models;
+namespace dengue.watch.api.common.models;
 
 public sealed record WeeklyTrainingWeatherSnapshot(
     string PsgcCode,

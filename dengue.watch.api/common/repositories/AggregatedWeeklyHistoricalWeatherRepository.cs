@@ -1,19 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Text;
 using dengue.watch.api.features.trainingdatapipeline.models;
 using dengue.watch.api.features.trainingdatapipeline.services;
-using dengue.watch.api.infrastructure.database;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace dengue.watch.api.features.trainingdatapipeline.repositories;
-
-public interface IWeeklyTrainingWeatherRepository
+namespace dengue.watch.api.common.repositories;
+public interface IAggregatedWeeklyHistoricalWeatherRepository
 {
     Task<WeeklyTrainingWeatherResult> GetWeeklySnapshotsAsync(
         string psgcCode,
@@ -23,7 +17,7 @@ public interface IWeeklyTrainingWeatherRepository
         CancellationToken cancellationToken = default);
 }
 
-public class WeeklyTrainingWeatherRepository : IWeeklyTrainingWeatherRepository
+public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHistoricalWeatherRepository
 {
     //
     private const string BaseSelectSql = "SELECT " +
@@ -41,10 +35,8 @@ public class WeeklyTrainingWeatherRepository : IWeeklyTrainingWeatherRepository
         "AND DATE_PART('isoyear', a.date) = ANY(@years) ";
 
     private readonly ApplicationDbContext _dbContext;
-    private readonly IWeekExtractorService _weekExtractor;
-    private readonly IYearExtractorService _yearExtractor;
-    private readonly ITrainingDataWeeklyStatisticsService _weeklyStatisticsService;
-    private readonly ILogger<WeeklyTrainingWeatherRepository> _logger;
+       private readonly ITrainingDataWeeklyStatisticsService _weeklyStatisticsService;
+    private readonly ILogger<AggregatedWeeklyHistoricalWeatherRepository> _logger;
     private readonly SemaphoreSlim _commandSemaphore = new(1, 1);
 
     private static readonly TextInfo TitleCaseTextInfo = CultureInfo.InvariantCulture.TextInfo;
@@ -65,16 +57,12 @@ public class WeeklyTrainingWeatherRepository : IWeeklyTrainingWeatherRepository
     private const double WetWeekTotalPrecipitationThreshold = 50d;
     private const int WetWeekDrizzleDayThreshold = 4;
 
-    public WeeklyTrainingWeatherRepository(
+    public AggregatedWeeklyHistoricalWeatherRepository(
         ApplicationDbContext dbContext,
-        IWeekExtractorService weekExtractor,
-        IYearExtractorService yearExtractor,
         ITrainingDataWeeklyStatisticsService weeklyStatisticsService,
-        ILogger<WeeklyTrainingWeatherRepository> logger)
+        ILogger<AggregatedWeeklyHistoricalWeatherRepository> logger)
     {
         _dbContext = dbContext;
-        _weekExtractor = weekExtractor;
-        _yearExtractor = yearExtractor;
         _weeklyStatisticsService = weeklyStatisticsService;
         _logger = logger;
     }

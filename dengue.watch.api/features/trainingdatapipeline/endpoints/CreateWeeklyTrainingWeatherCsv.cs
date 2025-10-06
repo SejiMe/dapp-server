@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using dengue.watch.api.features.trainingdatapipeline.models;
-using dengue.watch.api.features.trainingdatapipeline.repositories;
 using dengue.watch.api.features.trainingdatapipeline.services;
-using Microsoft.AspNetCore.Mvc;
+
 
 namespace dengue.watch.api.features.trainingdatapipeline.endpoints;
 
@@ -24,7 +23,7 @@ public sealed class CreateWeeklyTrainingWeatherCsv : IEndpoint
     }
 
     private static async Task<IResult> HandleAsync(
-        [FromServices] IWeeklyTrainingWeatherRepository repository,
+        [FromServices] IAggregatedWeeklyHistoricalWeatherRepository repository,
         [FromServices] ITrainingDataCsvService csvService,
         [FromBody, Required] TrainingDataWeatherRequest request,
         CancellationToken cancellationToken)
