@@ -16,7 +16,7 @@ public static class MLServicesExtensions
         services.AddSingleton<IPredictionService<DengueForecastInput, DengueForecastOutput>, DengueForecastService>();
         
         // Register specific service for easier injection
-        services.AddSingleton<DengueForecastService>();
+        // services.AddSingleton<DengueForecastService>();
 
         // Register weekly and monthly prediction services (stubs)
         services.AddSingleton<WeeklyDengueForecastService>();

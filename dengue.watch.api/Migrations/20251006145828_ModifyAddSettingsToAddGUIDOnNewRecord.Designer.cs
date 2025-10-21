@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using dengue.watch.api.infrastructure.database;
@@ -11,9 +12,11 @@ using dengue.watch.api.infrastructure.database;
 namespace dengue.watch.api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251006145828_ModifyAddSettingsToAddGUIDOnNewRecord")]
+    partial class ModifyAddSettingsToAddGUIDOnNewRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -147,21 +150,13 @@ namespace dengue.watch.api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("prediction_id");
 
-                    b.Property<int>("LaggedIsoWeek")
+                    b.Property<int>("IsoWeek")
                         .HasColumnType("integer")
-                        .HasColumnName("lagged_iso_week");
+                        .HasColumnName("iso_week");
 
-                    b.Property<int>("LaggedIsoYear")
-                        .HasColumnType("integer")
-                        .HasColumnName("lagged_iso_year");
-
-                    b.Property<int>("PredictedIsoWeek")
-                        .HasColumnType("integer")
-                        .HasColumnName("predicted_iso_week");
-
-                    b.Property<int>("PredictedIsoYear")
-                        .HasColumnType("integer")
-                        .HasColumnName("predicted_iso_year");
+                    b.Property<DateOnly>("PredictedDate")
+                        .HasColumnType("date")
+                        .HasColumnName("predicted_date");
 
                     b.Property<int>("PredictedValue")
                         .HasColumnType("integer")
@@ -171,6 +166,10 @@ namespace dengue.watch.api.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("iso_year");
 
                     b.HasKey("PredictionId");
 

@@ -5,7 +5,7 @@ namespace dengue.watch.api.common.extensions;
 
 public class Guid7ValueGeneratorExtension : ValueGenerator<Guid>
 {
-    public override bool GeneratesTemporaryValues => throw new NotImplementedException();
+    public override bool GeneratesTemporaryValues => false;
 
     public override Guid Next(EntityEntry entry)
     {

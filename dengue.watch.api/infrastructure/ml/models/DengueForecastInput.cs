@@ -1,7 +1,11 @@
 using Microsoft.ML.Data;
 
 namespace dengue.watch.api.infrastructure.ml.models;
-public class LaggedDengueCausalData
+
+/// <summary>
+/// Input data for dengue forecasting
+/// </summary>
+public class DengueForecastInput
     {
         // Put all your dataset fields here. Use attributes to map if loading from CSV.
 
@@ -12,7 +16,7 @@ public class LaggedDengueCausalData
         public int DengueWeekNumber { get; set; }
 
         [LoadColumn(2)]
-        [ColumnName("Label")]
+        [ColumnName("DengueCount")]
         public float DengueCaseCount { get; set; }  // Label
 
         // Lag features...

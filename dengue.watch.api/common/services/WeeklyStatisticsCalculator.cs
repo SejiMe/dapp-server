@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using dengue.watch.api.features.trainingdatapipeline.models;
 
-namespace dengue.watch.api.features.trainingdatapipeline.services;
+namespace dengue.watch.api.common.services;
 
 internal static class WeeklyStatisticsCalculator
 {
@@ -43,9 +39,9 @@ internal static class WeeklyStatisticsCalculator
 
     private static void ValidateWeeklyLength(int count, string parameterName)
     {
-        if (count != 7)
+        if (count > 7)
         {
-            throw new ArgumentException("Weekly data must contain exactly 7 elements.", parameterName);
+            throw new ArgumentException("Weekly data must contain 7 OR below elements.", parameterName);
         }
     }
 }

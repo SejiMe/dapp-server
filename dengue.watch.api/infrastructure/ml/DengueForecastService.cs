@@ -1,40 +1,12 @@
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using Microsoft.ML.Transforms;
 using Microsoft.ML.Transforms.TimeSeries;
 
 namespace dengue.watch.api.infrastructure.ml;
-
-/// <summary>
-/// Input data for dengue forecasting
-/// </summary>
-public class DengueForecastInput
-{
-    public DateTime Date { get; set; }
-    public string Location { get; set; } = string.Empty;
-    public float Temperature { get; set; }
-    public float Humidity { get; set; }
-    public float Rainfall { get; set; }
-    public float CaseCount { get; set; }
-}
-
-/// <summary>
-/// Output prediction for dengue forecasting
-/// </summary>
-public class DengueForecastOutput
-{
-    [VectorType(7)] // Forecast for next 7 days
-    public float[] ForecastedCases { get; set; } = new float[7];
-    
-    [VectorType(7)]
-    public float[] LowerBoundCases { get; set; } = new float[7];
-    
-    [VectorType(7)]
-    public float[] UpperBoundCases { get; set; } = new float[7];
-    
-    public string Location { get; set; } = string.Empty;
-    public DateTime PredictionDate { get; set; }
-    public float ConfidenceLevel { get; set; }
-}
 
 /// <summary>
 /// Dengue forecasting service using ML.NET
@@ -45,13 +17,18 @@ public class DengueForecastService : IPredictionService<DengueForecastInput, Den
     private readonly ILogger<DengueForecastService> _logger;
     private ITransformer? _model;
     private readonly string _modelPath;
+    private readonly IWebHostEnvironment _hostEnv;
 
-    public DengueForecastService(ILogger<DengueForecastService> logger)
+
+    public DengueForecastService(ILogger<DengueForecastService> logger, IWebHostEnvironment hostEnv)
     {
         _mlContext = new MLContext(seed: 1);
-        _logger = logger;
-        _modelPath = Path.Combine("infrastructure", "ml", "models", "dengue-forecast-model.zip");
+        // _mlContext.ComponentCatalog.RegisterAssembly(typeof(IsWetWeekMappingFactory).Assembly);
+
         
+        _logger = logger;
+        _hostEnv =  hostEnv;
+        _modelPath = Path.Combine(hostEnv.ContentRootPath,"infrastructure", "ml", "models", "DengueForecastModel.zip");
         // Create models directory if it doesn't exist
         var modelDir = Path.GetDirectoryName(_modelPath);
         if (modelDir != null && !Directory.Exists(modelDir))
@@ -74,12 +51,12 @@ public class DengueForecastService : IPredictionService<DengueForecastInput, Den
         return await Task.Run(() =>
         {
             var prediction = predictionEngine.Predict(input);
-            prediction.Location = input.Location;
-            prediction.PredictionDate = DateTime.UtcNow;
-            prediction.ConfidenceLevel = CalculateConfidence(prediction);
+            // prediction. = input.Location;
+            // prediction.PredictionDate = DateTime.UtcNow;
+            // prediction.ConfidenceLevel = CalculateConfidence(prediction);
             
-            _logger.LogInformation("Forecast generated for location {Location} with confidence {Confidence}%", 
-                input.Location, prediction.ConfidenceLevel * 100);
+            // _logger.LogInformation("Forecast generated for location {Location} with confidence {Confidence}%", 
+            // input.Location, prediction.ConfidenceLevel * 100);
             
             return prediction;
         });
@@ -104,42 +81,119 @@ public class DengueForecastService : IPredictionService<DengueForecastInput, Den
         return predictions;
     }
 
-    public async Task<ModelMetrics> TrainModelAsync(IEnumerable<DengueForecastInput> trainingData)
+    public async Task<ModelMetrics> TrainModelAsync()
     {
         _logger.LogInformation("Starting model training...");
+        string fullpath = Path.Combine(_hostEnv.ContentRootPath, "infrastructure", "ml", "data", "weekly_training_data.csv");
+
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            Delimiter = ",",
+        };
+
+        using var reader = new StreamReader(fullpath);
+        using var csv = new CsvReader(reader, config);
+        var records = csv.GetRecords<DengueForecastInput>().ToList();
+
+        IDataView dataView = _mlContext.Data.LoadFromEnumerable(records);
+
+        // 2. Split data into train/test
+        var split = _mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+
+        // 3. Build pipeline for training
+        var pipeline = _mlContext.Transforms.Conversion.MapValueToKey(
+        outputColumnName: "WeatherCategoryKey",
+        inputColumnName: nameof(DengueForecastInput.DominantWeatherCategory))
+        .Append(_mlContext.Transforms.Categorical.OneHotEncoding(
+            outputColumnName: "WeatherCategoryEncoded",
+            inputColumnName: "WeatherCategoryKey"))
+        // .Append(_mlContext.Transforms.CustomMapping<DengueForecastInput, IsWetWeekTransformed>(
+        //     (input, output) => output.IsWetWeekFloat = input.IsWetWeek?.ToUpper() == "TRUE" ? 1.0f : 0.0f,
+        //     contractName: "IsWetWeekConversion"))
+        // .Append(_mlContext.Transforms.CustomMapping(
+        //     IsWetWeekMappingFactory,
+        //     contractName: "IsWetWeekConversion"))
+        .Append(_mlContext.Transforms.CustomMapping<DengueForecastInput, IsWetWeekTransformed>(
+            (input, output) => output.IsWetWeekFloat = input.IsWetWeek?.ToUpper() == "TRUE" ? 1.0f : 0.0f,
+            "IsWetWeekConversion"))
+        .Append(_mlContext.Transforms.Conversion.ConvertType(
+            outputColumnName: "DengueYearFloat",
+            inputColumnName: nameof(DengueForecastInput.DengueYear),
+            outputKind: DataKind.Single))
+        .Append(_mlContext.Transforms.Conversion.ConvertType(
+            outputColumnName: "DengueWeekNumberFloat",
+            inputColumnName: nameof(DengueForecastInput.DengueWeekNumber),
+            outputKind: DataKind.Single))
+        .Append(_mlContext.Transforms.Conversion.ConvertType(
+            outputColumnName: "LagWeekNumberFloat",
+            inputColumnName: nameof(DengueForecastInput.LagWeekNumber),
+            outputKind: DataKind.Single))
+        // Now concatenate all features
+        .Append(_mlContext.Transforms.Concatenate(
+            "Features",
+            "WeatherCategoryEncoded",
+            "IsWetWeekFloat",
+            "DengueYearFloat",
+            "DengueWeekNumberFloat",
+            "LagWeekNumberFloat",
+            nameof(DengueForecastInput.TemperatureMean),
+            nameof(DengueForecastInput.TemperatureMax),
+            nameof(DengueForecastInput.HumidityMean),
+            nameof(DengueForecastInput.HumidityMax),
+            nameof(DengueForecastInput.PrecipitationMean),
+            nameof(DengueForecastInput.PrecipitationMax)
+        ))
+            .Append(_mlContext.Transforms.NormalizeMinMax("Features"))
+            .Append(_mlContext.Regression.Trainers.FastTree(
+                labelColumnName: "DengueCount",
+                featureColumnName: "Features"));
+
+        _model = await Task.Run(() => pipeline.Fit(split.TrainSet));
+        var predictions = _model.Transform(split.TestSet);
+
+        var result = _mlContext.Regression.Evaluate(predictions,
+            labelColumnName: "DengueCount",
+            scoreColumnName: "Score");
+
+        _logger.LogInformation("R^2 : {MetricRSquared}\nRMSE: {RMSE}",
+            result.RSquared.ToString("0.###"),
+            result.RootMeanSquaredError
+        );
         
-        var dataList = trainingData.ToList();
-        var dataView = _mlContext.Data.LoadFromEnumerable(dataList);
+        var predictor = _mlContext.Model.CreatePredictionEngine<DengueForecastInput, DengueForecastOutput>(_model);
+        
+        
+        var sampleData = new DengueForecastInput
+        {
+            TemperatureMean = 27.09f,
+            TemperatureMax = 27.60f,
+            HumidityMean = 87.57f,
+            HumidityMax = 90.00f,
+            PrecipitationMean = 8.49f,
+            PrecipitationMax = 17.50f,
+            DominantWeatherCategory = "Rain",
+            IsWetWeek = "TRUE"
+            // fill other fields as needed
+        };
 
-        // Create the forecasting pipeline
-        var pipeline = _mlContext.Forecasting.ForecastBySsa(
-            outputColumnName: nameof(DengueForecastOutput.ForecastedCases),
-            inputColumnName: nameof(DengueForecastInput.CaseCount),
-            windowSize: 30,    // Use 30 days of historical data
-            seriesLength: 365, // Full year of data
-            trainSize: dataList.Count,
-            horizon: 7,        // Forecast 7 days ahead
-            confidenceLevel: 0.95f,
-            confidenceLowerBoundColumn: nameof(DengueForecastOutput.LowerBoundCases),
-            confidenceUpperBoundColumn: nameof(DengueForecastOutput.UpperBoundCases));
-
-        // Train the model
-        _model = await Task.Run(() => pipeline.Fit(dataView));
-
-        // Save the model
+        var pr = predictor.Predict(sampleData);
+        
+        // string saveFullpath = Path.Combine(_hostEnv.ContentRootPath, "infrastructure", "ml", "models", "DengueForecastModel.zip");
+        
         await SaveModelAsync();
 
         // Calculate metrics
         var metrics = new ModelMetrics(
             Accuracy: 0.85, // This would be calculated from actual validation
-            MeanAbsoluteError: 2.5,
-            RSquared: 0.78,
+            MeanAbsoluteError: result.RootMeanSquaredError,
+            RSquared: result.RSquared,
             TrainedAt: DateTime.UtcNow,
-            TrainingDataSize: dataList.Count
+            TrainingDataSize: records.Count
         );
 
-        _logger.LogInformation("Model training completed. Training data size: {Size}, Accuracy: {Accuracy}%", 
-            dataList.Count, metrics.Accuracy * 100);
+        // _logger.LogInformation("Model training completed. Training data size: {Size}, Accuracy: {Accuracy}%", 
+            // dataList.Count, metrics.Accuracy * 100);
 
         return metrics;
     }
@@ -190,13 +244,20 @@ public class DengueForecastService : IPredictionService<DengueForecastInput, Den
     private static float CalculateConfidence(DengueForecastOutput prediction)
     {
         // Simple confidence calculation based on forecast bounds
-        var avgForecast = prediction.ForecastedCases.Average();
-        var avgLower = prediction.LowerBoundCases.Average();
-        var avgUpper = prediction.UpperBoundCases.Average();
-        
-        if (avgUpper - avgLower == 0) return 1.0f;
-        
-        var confidence = 1.0f - ((avgUpper - avgLower) / Math.Max(avgForecast, 1.0f));
-        return Math.Max(0.0f, Math.Min(1.0f, confidence));
+        // var avgForecast = prediction.ForecastedCases.Average();
+        // var avgLower = prediction.LowerBoundCases.Average();
+        // var avgUpper = prediction.UpperBoundCases.Average();
+        //
+        // if (avgUpper - avgLower == 0) return 1.0f;
+        //
+        // var confidence = 1.0f - ((avgUpper - avgLower) / Math.Max(avgForecast, 1.0f));
+        return Math.Max(0.0f, Math.Min(1.0f, 1));
     }
+    
+// Helper
+// [CustomMappingFactoryAttribute("IsWetWeekConversion")]
+// public class IsWetWeekTransformed
+// {
+//     public float IsWetWeekFloat { get; set; }
+// }
 }

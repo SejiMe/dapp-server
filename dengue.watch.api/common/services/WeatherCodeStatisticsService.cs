@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace dengue.watch.api.features.trainingdatapipeline.services;
+namespace dengue.watch.api.common.services;
 
 public interface IWeatherCodeStatisticsService
 {

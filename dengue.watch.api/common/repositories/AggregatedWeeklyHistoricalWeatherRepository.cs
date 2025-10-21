@@ -15,6 +15,13 @@ public interface IAggregatedWeeklyHistoricalWeatherRepository
         int? dengueWeekNumber,
         (int From, int To)? dengueWeekRange,
         CancellationToken cancellationToken = default);
+
+    Task<AggregatedWeeklyHistoricalWeatherSnapshot> GetWeeklyHistoricalWeatherSnapshotAsync(
+        string psgc,
+        int year,
+        int isoweek,
+        CancellationToken cancellationToken = default);
+
 }
 
 public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHistoricalWeatherRepository
@@ -34,8 +41,28 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
         "WHERE a.psgc_code = @psgc_code " +
         "AND DATE_PART('isoyear', a.date) = ANY(@years) ";
 
+
+    private const string BaseSelectWeatherData = @"
+        SELECT 
+          we.main_description as WeatherMainDescription,
+          a.weather_code_id as WeatherCodeId,
+          CAST(DATE_PART('week', a.date) AS INT) as WeekNumber,
+          CAST(DATE_PART('isoyear', a.date) AS INT) as Year,
+          a.date as Date,
+          a.temperature as Temperature,
+          a.precipitation as Precipitation,
+          a.humidity as Humidity
+        FROM public.daily_weather as a 
+          LEFT JOIN weather_codes as we ON we.id = a.weather_code_id
+        where 1=1
+        AND a.psgc_code =  @psgc
+        AND DATE_PART('week', a.date) = @iso_week
+        AND DATE_PART('isoyear', a.date) = @iso_year
+        ORDER by date"
+    ;
+    
     private readonly ApplicationDbContext _dbContext;
-       private readonly ITrainingDataWeeklyStatisticsService _weeklyStatisticsService;
+       private readonly IWeeklyDataStatisticsService _weeklyStatisticsService;
     private readonly ILogger<AggregatedWeeklyHistoricalWeatherRepository> _logger;
     private readonly SemaphoreSlim _commandSemaphore = new(1, 1);
 
@@ -59,7 +86,7 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
 
     public AggregatedWeeklyHistoricalWeatherRepository(
         ApplicationDbContext dbContext,
-        ITrainingDataWeeklyStatisticsService weeklyStatisticsService,
+        IWeeklyDataStatisticsService weeklyStatisticsService,
         ILogger<AggregatedWeeklyHistoricalWeatherRepository> logger)
     {
         _dbContext = dbContext;
@@ -232,6 +259,96 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
                 psgcCode);
             throw;
         }
+    }
+
+    // Currently Working
+    public async Task<AggregatedWeeklyHistoricalWeatherSnapshot> GetWeeklyHistoricalWeatherSnapshotAsync(string psgc, int year, int isoweek, CancellationToken cancellationToken = default)
+    {
+        if (psgc is not { Length: 10 })
+            throw new ValidationException("Can't Process this data");
+
+    
+        if(isoweek < 1 ||  isoweek > 53)
+            throw new ValidationException("Can't Process iso week");
+        
+        if(year < 2012)
+            throw new ValidationException("Can't process years 2012 below");
+
+        List<NpgsqlParameter> parameters = new List<NpgsqlParameter>();
+        
+        parameters.Add(new NpgsqlParameter("psgc", psgc));
+        parameters.Add(new NpgsqlParameter("iso_week", isoweek));
+        parameters.Add(new NpgsqlParameter("iso_year", year));
+        
+        QueryInfo queryInfo = new QueryInfo(BaseSelectWeatherData, parameters);
+        
+        
+        
+        try
+        {
+            
+            var weatherDataRecord =  await ExecuteWeatherQueryAsync(queryInfo.Sql, queryInfo.Parameters, cancellationToken);
+            
+            var temperatureValues = weatherDataRecord.Select(row => row.Temperature).ToArray();
+            var humidityValues = weatherDataRecord.Select(row => row.Humidity).ToArray();
+            var precipitationValues = weatherDataRecord.Select(row => row.Precipitation).ToArray();
+            var weatherCodeValues = weatherDataRecord.Select(row => row.WeatherCodeId).ToArray();
+            var weatherDescriptions = weatherDataRecord.Select(row => row.WeatherMainDescription ?? string.Empty).ToArray();
+
+            var temperatureStats = _weeklyStatisticsService.CalculateTemperatureStatistics(temperatureValues, temperatureValues);
+            var humidityStats = _weeklyStatisticsService.CalculateHumidityStatistics(humidityValues, humidityValues);
+            var precipitationStats = _weeklyStatisticsService.CalculatePrecipitationStatistics(precipitationValues, precipitationValues);
+            
+            var weatherCodeFrequency = weatherCodeValues
+                .GroupBy(code => code)
+                .Select(grouping => new
+                {
+                    Code = grouping.Key,
+                    Count = grouping.Count()
+                })
+                .OrderByDescending(entry => entry.Count)
+                .ThenBy(entry => entry.Code)
+                .FirstOrDefault();
+
+            var mostCommonWeatherCodeId = weatherCodeFrequency?.Code ?? 0;
+            var occurrenceCount = weatherCodeFrequency?.Count ?? 0;
+
+            var dominance = DetermineDominantWeatherCategory(weatherDescriptions);
+            var mostCommonDescription = dominance.Description ?? GetMostCommonDescription(weatherDescriptions);
+
+            var dominantWeatherCategory = dominance.HasPriorityMatch
+                ? dominance.Category
+                : mostCommonDescription ?? dominance.Category;
+
+            dominantWeatherCategory ??= "Unclassified";
+
+            var isWetWeek = IsWetWeek(precipitationValues, weatherDescriptions);
+            
+            AggregatedWeeklyHistoricalWeatherSnapshot aggregatedData = new(
+                psgc,
+                year,
+                isoweek,
+                temperatureStats,
+                humidityStats,
+                precipitationStats,
+                mostCommonWeatherCodeId,
+                occurrenceCount,
+                mostCommonDescription,
+                isWetWeek
+                );
+            
+            
+            
+            return aggregatedData;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        
+       
     }
 
     private async Task<List<RawWeatherRow>> ExecuteWeatherQueryAsync(

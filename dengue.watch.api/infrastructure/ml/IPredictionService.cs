@@ -26,7 +26,7 @@ public interface IPredictionService<TInput, TOutput>
     /// </summary>
     /// <param name="trainingData">Training data</param>
     /// <returns>Training metrics</returns>
-    Task<ModelMetrics> TrainModelAsync(IEnumerable<TInput> trainingData);
+    Task<ModelMetrics> TrainModelAsync();
 
     /// <summary>
     /// Get model information

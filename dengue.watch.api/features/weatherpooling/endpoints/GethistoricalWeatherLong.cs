@@ -23,14 +23,16 @@ public class GetHistoricalWeatherLong : IEndpoint
     private static async Task<IResult> GetHistoricalWeatherLongData(
         [FromQuery] decimal latitude,
         [FromQuery] decimal longitude,
+        [FromQuery] DateOnly startDate,
+        [FromQuery] DateOnly endDate,
         [FromServices] IWeatherDataAPI weatherDataAPI,
         [FromServices] ApplicationDbContext _db,
         [FromServices] ILogger<GetHistoricalWeatherLong> _logger,
         CancellationToken cancellationToken)
     {
         // Set start and end date
-        DateOnly startDate = new(2012, 1, 1);
-        DateOnly endDate = new(2012, 12, 31);
+        if (endDate < startDate)
+            throw new ValidationException("End Date must be greater than the Start Date");
         // Get psgc code based on latitude and longitude
         var psgcCode = await _db.AdministrativeAreas
         .Where(x => x.Latitude == latitude && x.Longitude == longitude)

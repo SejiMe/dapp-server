@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using dengue.watch.api.features.trainingdatapipeline.models;
 
-namespace dengue.watch.api.features.trainingdatapipeline.services;
 
-public interface ITrainingDataWeeklyStatisticsService
+namespace dengue.watch.api.common.services;
+
+public interface IWeeklyDataStatisticsService
 {
     WeeklyStatisticsResult CalculateTemperatureStatistics(IEnumerable<double> minimumTemperatures, IEnumerable<double> maximumTemperatures);
     WeeklyStatisticsResult CalculateHumidityStatistics(IEnumerable<double> minimumHumidity, IEnumerable<double> maximumHumidity);
@@ -12,14 +11,14 @@ public interface ITrainingDataWeeklyStatisticsService
     int CountWeatherCodeOccurrences(IEnumerable<string> weatherCodeDescriptions, string targetDescription);
 }
 
-public class TrainingDataWeeklyStatisticsService : ITrainingDataWeeklyStatisticsService
+public class WeeklyDataStatisticsService : IWeeklyDataStatisticsService
 {
     private readonly ITemperatureStatisticsService _temperatureStatisticsService;
     private readonly IHumidityStatisticsService _humidityStatisticsService;
     private readonly IPrecipitationStatisticsService _precipitationStatisticsService;
     private readonly IWeatherCodeStatisticsService _weatherCodeStatisticsService;
 
-    public TrainingDataWeeklyStatisticsService(
+    public WeeklyDataStatisticsService(
         ITemperatureStatisticsService temperatureStatisticsService,
         IHumidityStatisticsService humidityStatisticsService,
         IPrecipitationStatisticsService precipitationStatisticsService,

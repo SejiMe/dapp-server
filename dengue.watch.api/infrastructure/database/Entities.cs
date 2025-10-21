@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System.ComponentModel.DataAnnotations;
@@ -148,16 +149,20 @@ public class PredictedWeeklyDengueCase
 
 	[Required]
 	[Range(1, 53)]
-	public int IsoWeek { get; set; }
+	public int LaggedIsoWeek { get; set; }
 
 	[Required]
-	public int Year { get; set; }
+	public int LaggedIsoYear { get; set; }
 
 	[Required]
 	public int PredictedValue { get; set; }
-
+	
 	[Required]
-	public DateOnly PredictedDate { get; set; }
+	[Range(1, 53)]
+	public int PredictedIsoWeek { get; set; }
+	
+	[Required]
+	public int PredictedIsoYear { get; set; }
 
 	[Required]
 	[MaxLength(10)]
@@ -241,10 +246,13 @@ public static class EntityModelConfiguration
 			entity.ToTable("predicted_weekly_dengue_cases");
 			entity.Property(p => p.PredictionId)
 			.HasColumnName("prediction_id")
-			.HasValueGenerator<Guid7ValueGeneratorExtension>();
-			entity.Property(p => p.IsoWeek).HasColumnName("iso_week");
-			entity.Property(p => p.Year).HasColumnName("iso_year");
-			entity.Property(p => p.PredictedDate).HasColumnName("predicted_date");
+			.HasValueGenerator<Guid7ValueGeneratorExtension>()
+			.ValueGeneratedOnAdd();
+		
+			entity.Property(p => p.LaggedIsoWeek).HasColumnName("lagged_iso_week");
+			entity.Property(p => p.LaggedIsoYear).HasColumnName("lagged_iso_year");
+			entity.Property(p => p.PredictedIsoWeek).HasColumnName("predicted_iso_week");
+			entity.Property(p => p.PredictedIsoYear).HasColumnName("predicted_iso_year");
 			entity.Property(p => p.PredictedValue).HasColumnName("predicted_value");
 			entity.HasOne(m => m.AdministrativeArea)
 			.WithMany(a => a.PredictedWeeklyDengueCases)

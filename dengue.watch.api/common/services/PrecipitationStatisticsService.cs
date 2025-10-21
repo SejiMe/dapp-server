@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using dengue.watch.api.features.trainingdatapipeline.models;
 
-namespace dengue.watch.api.features.trainingdatapipeline.services;
+
+namespace dengue.watch.api.common.services;
 
 public interface IPrecipitationStatisticsService
 {
