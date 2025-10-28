@@ -147,6 +147,10 @@ namespace dengue.watch.api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("prediction_id");
 
+                    b.Property<double>("ConfidencePercentage")
+                        .HasColumnType("double precision")
+                        .HasColumnName("confidence_percentage");
+
                     b.Property<int>("LaggedIsoWeek")
                         .HasColumnType("integer")
                         .HasColumnName("lagged_iso_week");
@@ -154,6 +158,10 @@ namespace dengue.watch.api.Migrations
                     b.Property<int>("LaggedIsoYear")
                         .HasColumnType("integer")
                         .HasColumnName("lagged_iso_year");
+
+                    b.Property<float>("LowerBound")
+                        .HasColumnType("real")
+                        .HasColumnName("lower_bound");
 
                     b.Property<int>("PredictedIsoWeek")
                         .HasColumnType("integer")
@@ -167,10 +175,23 @@ namespace dengue.watch.api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("predicted_value");
 
+                    b.Property<double>("ProbabilityOfOutbreak")
+                        .HasColumnType("double precision")
+                        .HasColumnName("probability_of_outbreak");
+
                     b.Property<string>("PsgcCode")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<string>("RiskLevel")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("risk_level");
+
+                    b.Property<float>("UpperBound")
+                        .HasColumnType("real")
+                        .HasColumnName("upper_bound");
 
                     b.HasKey("PredictionId");
 

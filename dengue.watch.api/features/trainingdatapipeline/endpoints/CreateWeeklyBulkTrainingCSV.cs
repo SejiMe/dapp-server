@@ -2,10 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using dengue.watch.api.features.trainingdatapipeline.models;
 using dengue.watch.api.features.trainingdatapipeline.services;
 
-
 namespace dengue.watch.api.features.trainingdatapipeline.endpoints;
 
-public sealed class CreateWeeklyTrainingWeatherCsv : IEndpoint
+public class CreateWeeklyBulkTrainingCSV : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
@@ -13,9 +12,9 @@ public sealed class CreateWeeklyTrainingWeatherCsv : IEndpoint
             .WithTags("Training Data Pipeline")
             .WithOpenApi();
 
-        group.MapPost("/weekly-weather/csv", HandleAsync)
-            .WithName("CreateWeeklyTrainingWeatherCsv")
-            .WithSummary("Generate weekly training weather CSV file")
+        group.MapPost("/weekly-weather/all/csv", HandleAsync)
+            .WithName("CreateWeeklyTrainingAllCsv")
+            .WithSummary("Generate weekly training weather CSV file for all")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
 
@@ -41,19 +40,34 @@ public sealed class CreateWeeklyTrainingWeatherCsv : IEndpoint
         }
 
         var weekRange = request.WeekRange is null
-    ? (1, 53)
-    : (request.WeekRange.From, request.WeekRange.To);
+            ? (1, 53)
+            : (request.WeekRange.From, request.WeekRange.To);
+     
+        var psgcCodes = await _context.AdministrativeAreas
+            .AsNoTracking()
+            .Where(area => area.GeographicLevel.ToLower() == "bgy")
+            .Select(area => area.PsgcCode)
+            .ToListAsync(cancellationToken);
+
         
+        
+        var resultsArrays = await Task.WhenAll(psgcCodes
+            .Select(psgcCode => repository.GetWeeklySnapshotsAsync(
+                psgcCode,
+                years,
+                dengueWeekNumber: null,
+                dengueWeekRange: (1, 53),
+                cancellationToken)));
+        
+        WeeklyTrainingWeatherResult results =  new (new List<WeeklyTrainingWeatherSnapshot>(), new List<string>());
 
-        var result = await repository.GetWeeklySnapshotsAsync(
-            request.PsgcCode,
-            years,
-            request.WeekNumber,
-            weekRange,
-            cancellationToken);
+        foreach (var weeklyResult in resultsArrays)
+        {
+            results.Snapshots.AddRange(weeklyResult.Snapshots);
+            results.MissingLagWeeks.AddRange(weeklyResult.MissingLagWeeks);
+        } 
 
-        var csvFile = csvService.CreateCsv(result, request.isPsgcExcludedInResult
-        );
+        var csvFile = csvService.CreateCsv(results, request.isPsgcExcludedInResult);
     
         return Results.File(
             csvFile.Content,

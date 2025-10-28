@@ -24,7 +24,7 @@ public class ValidationException : BaseException
 
     public ValidationException(string message, Dictionary<string, string[]> errors) : base(message)
     {
-        Errors = errors;
+        Errors = errors;    
     }
 
     public ValidationException(string message) : base(message)

@@ -16,7 +16,7 @@ public class DengueCasesFeature : IFeature
     public static IServiceCollection ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         // services.AddScoped<IDengueCasesService, DengueCasesService>();
-        services.AddTransient<DateExtraction>();
+        
         string timeZoneId; 
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -62,10 +62,12 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
     ;
     
     private readonly ApplicationDbContext _dbContext;
-       private readonly IWeeklyDataStatisticsService _weeklyStatisticsService;
+    private readonly IWeeklyDataStatisticsService _weeklyStatisticsService;
     private readonly ILogger<AggregatedWeeklyHistoricalWeatherRepository> _logger;
     private readonly SemaphoreSlim _commandSemaphore = new(1, 1);
-
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+    
+    
     private static readonly TextInfo TitleCaseTextInfo = CultureInfo.InvariantCulture.TextInfo;
 
     private static readonly string[] HighPriorityWeatherTerms =
@@ -86,10 +88,12 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
 
     public AggregatedWeeklyHistoricalWeatherRepository(
         ApplicationDbContext dbContext,
+        IServiceScopeFactory scopeFactory,
         IWeeklyDataStatisticsService weeklyStatisticsService,
         ILogger<AggregatedWeeklyHistoricalWeatherRepository> logger)
     {
         _dbContext = dbContext;
+        _serviceScopeFactory = scopeFactory;
         _weeklyStatisticsService = weeklyStatisticsService;
         _logger = logger;
     }
@@ -154,8 +158,8 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
             if (dengueRecords.Count == 0)
             {
                 return new WeeklyTrainingWeatherResult(
-                    Array.Empty<WeeklyTrainingWeatherSnapshot>(),
-                    new[] { psgcCode });
+                    new List<WeeklyTrainingWeatherSnapshot>(),
+                    new () { psgcCode });
             }
 
             var laggedWeather = await FetchLaggedWeatherRowsAsync(
@@ -456,23 +460,34 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
         (int From, int To)? dengueWeekRange,
         CancellationToken cancellationToken)
     {
-        var dengueCasesQuery = _dbContext.WeeklyDengueCases
-            .AsNoTracking()
-            .Where(caseRecord => caseRecord.PsgcCode == psgcCode && dengueYears.Contains(caseRecord.Year));
-
-        if (dengueWeekNumber.HasValue)
+        await _commandSemaphore.WaitAsync(cancellationToken);
+        try
         {
-            dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber == dengueWeekNumber.Value);
-        }
-        else if (dengueWeekRange.HasValue)
-        {
-            var (fromWeek, toWeek) = dengueWeekRange.Value;
-            dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber >= fromWeek && caseRecord.WeekNumber <= toWeek);
-        }
+            // using var scope = _serviceScopeFactory.CreateScope();
+            // var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dengueCasesQuery = _dbContext.WeeklyDengueCases
+                .AsNoTracking()
+                .Where(caseRecord => caseRecord.PsgcCode == psgcCode && dengueYears.Contains(caseRecord.Year));
 
-        return await dengueCasesQuery
-            .Select(caseRecord => new DengueWeeklyRecord(caseRecord.Year, caseRecord.WeekNumber, caseRecord.CaseCount))
-            .ToListAsync(cancellationToken);
+            if (dengueWeekNumber.HasValue)
+            {
+                dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber == dengueWeekNumber.Value);
+            }
+            else if (dengueWeekRange.HasValue)
+            {
+                var (fromWeek, toWeek) = dengueWeekRange.Value;
+                dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber >= fromWeek && caseRecord.WeekNumber <= toWeek);
+            }
+
+            return await dengueCasesQuery
+                .Select(caseRecord => new DengueWeeklyRecord(caseRecord.Year, caseRecord.WeekNumber, caseRecord.CaseCount))
+                .ToListAsync(cancellationToken);
+        }
+        finally
+        {
+           _commandSemaphore.Release();
+        }
+        
     }
 
     private static DominantWeatherCategoryResult DetermineDominantWeatherCategory(string[] weatherDescriptions)

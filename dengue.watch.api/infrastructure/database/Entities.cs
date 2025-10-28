@@ -135,6 +135,8 @@ public class MonthlyDengueCase
 
 	[Required]
 	public int CaseCount { get; set; }
+	
+	
 }
 
 
@@ -163,6 +165,15 @@ public class PredictedWeeklyDengueCase
 	
 	[Required]
 	public int PredictedIsoYear { get; set; }
+	
+	
+	public float LowerBound { get; set; }
+	public float UpperBound { get; set; }
+	public double ConfidencePercentage { get; set; }
+	public double ProbabilityOfOutbreak { get; set; }
+
+	public string RiskLevel { get; set; }
+	
 
 	[Required]
 	[MaxLength(10)]
@@ -254,6 +265,14 @@ public static class EntityModelConfiguration
 			entity.Property(p => p.PredictedIsoWeek).HasColumnName("predicted_iso_week");
 			entity.Property(p => p.PredictedIsoYear).HasColumnName("predicted_iso_year");
 			entity.Property(p => p.PredictedValue).HasColumnName("predicted_value");
+			
+			entity.Property(p => p.LowerBound).HasColumnName("lower_bound");
+			entity.Property(p => p.UpperBound).HasColumnName("upper_bound");
+			entity.Property(p => p.ConfidencePercentage).HasColumnName("confidence_percentage");
+			entity.Property(p => p.ProbabilityOfOutbreak).HasColumnName("probability_of_outbreak");
+			entity.Property(p => p.RiskLevel).HasColumnName("risk_level");
+			
+			
 			entity.HasOne(m => m.AdministrativeArea)
 			.WithMany(a => a.PredictedWeeklyDengueCases)
 			.HasForeignKey(m => m.PsgcCode)

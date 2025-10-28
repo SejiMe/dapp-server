@@ -18,7 +18,7 @@ public class CreateManualPredictionByPsgcAndDate : IEndpoint
     }
     
     public record CreateDenguePredictionRequest(string psgccode, DateOnly dt);
-    public record CreateDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float valuePredicted);
+    public record CreateDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float valuePredicted, double probability);
     private static async Task<Results<Created<CreateDenguePredictionResponse>,Conflict<string>, BadRequest, ProblemHttpResult>> Handler(
         CreateDenguePredictionRequest _request,
         [FromServices] DateExtraction _dateExtraction,
@@ -42,8 +42,6 @@ public class CreateManualPredictionByPsgcAndDate : IEndpoint
             
             var fetchedSnapshot = await _repository.GetWeeklyHistoricalWeatherSnapshotAsync(_request.psgccode,dateParts.LaggedYear, dateParts.LaggedWeek, cancellation);
             
-            
-            
             DengueForecastInput forecastInput = new()
             {
                 TemperatureMean = (float)fetchedSnapshot.Temperature.Mean,
@@ -65,7 +63,12 @@ public class CreateManualPredictionByPsgcAndDate : IEndpoint
                 LaggedIsoYear = dateParts.LaggedYear,
                 PredictedIsoWeek = dateParts.ISOWeek,
                 PredictedIsoYear = dateParts.ISOYear,
-                PredictedValue = Convert.ToInt32(Math.Round(Convert.ToDecimal(val.PredictedCaseCount), 2))
+                PredictedValue = Convert.ToInt32(Math.Round(Convert.ToDecimal(val.Score), 2)),
+                LowerBound = val.LowerBound,
+                UpperBound = val.UpperBound,
+                ConfidencePercentage = val.ConfidencePercentage,
+                ProbabilityOfOutbreak = val.ProbabilityOfOutbreak,
+                RiskLevel = val.GetRiskLevel()
             };
 
 
@@ -73,7 +76,7 @@ public class CreateManualPredictionByPsgcAndDate : IEndpoint
             // check if it exists 
             await _db.PredictedWeeklyDengues.AddAsync(dCase);
             await _db.SaveChangesAsync(cancellation);
-            CreateDenguePredictionResponse response = new(_request.psgccode,bgyName, dateParts.ISOYear, dateParts.ISOWeek, dateParts.LaggedWeek, dateParts.LaggedYear, dCase.PredictedValue );
+            CreateDenguePredictionResponse response = new(_request.psgccode,bgyName, dateParts.ISOYear, dateParts.ISOWeek, dateParts.LaggedWeek, dateParts.LaggedYear, dCase.PredictedValue, dCase.ProbabilityOfOutbreak);
             return TypedResults.Created($"/api/dengue-cases/detailed/{dCase.PredictionId}", response);
         }
         catch (Exception e)

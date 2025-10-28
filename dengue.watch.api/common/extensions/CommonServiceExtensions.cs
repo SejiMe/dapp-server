@@ -9,6 +9,7 @@ public static class CommonServiceExtensions
         services.AddScoped<IPrecipitationStatisticsService, PrecipitationStatisticsService>();
         services.AddScoped<IWeatherCodeStatisticsService, WeatherCodeStatisticsService>();
         services.AddScoped<IWeeklyDataStatisticsService, WeeklyDataStatisticsService>();
+        services.AddTransient<DateExtraction>();
         return services;
     }
 }

@@ -155,6 +155,8 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 // Add JWT Authentication
 var supabaseSection = builder.Configuration.GetSection("Supabase");
 var jwtSecret = supabaseSection["JwtSecret"];
+
+
 if (!string.IsNullOrEmpty(jwtSecret))
 {
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -162,17 +164,15 @@ if (!string.IsNullOrEmpty(jwtSecret))
         {
             var supabaseUrl = supabaseSection["Url"];
             var key = Encoding.UTF8.GetBytes(jwtSecret);
-            
+
+            options.Authority = $"{supabaseUrl?.TrimEnd('/')}/auth/v1";
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = $"{supabaseUrl?.TrimEnd('/')}/auth/v1",
-                ValidateAudience = true,
-                ValidAudience = "dengue-watch-api",
+                ValidateIssuer = false,
+                ValidateAudience = false,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
             };
         });
 }

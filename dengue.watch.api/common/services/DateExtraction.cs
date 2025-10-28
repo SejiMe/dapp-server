@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace dengue.watch.api.features.denguecases.services;
+namespace dengue.watch.api.common.services;
 
 public class DateExtraction
 {

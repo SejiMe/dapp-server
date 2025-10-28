@@ -8,6 +8,7 @@ public abstract class AuthException : BaseException
     protected AuthException(string message, string? details = null, Exception? innerException = null) 
 : base(message, details, innerException)
     {
+        
     }
 }
 

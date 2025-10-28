@@ -24,5 +24,4 @@ public class TestDateExtraction : IEndpoint
         var res = _extractDate.ExtractCurrentDateAndLaggedDate(date);
         return Task.FromResult(new DateExtractionResponse(res.ISOYear, res.ISOWeek, res.LaggedYear, res.LaggedWeek));
     }
-
 }
