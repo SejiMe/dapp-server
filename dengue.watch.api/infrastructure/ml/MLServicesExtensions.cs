@@ -1,3 +1,5 @@
+using Microsoft.ML;
+
 namespace dengue.watch.api.infrastructure.ml;
 
 /// <summary>
@@ -12,15 +14,19 @@ public static class MLServicesExtensions
     /// <returns>The configured service collection</returns>
     public static IServiceCollection AddMLServices(this IServiceCollection services)
     {
+        // Register MLContext as Singleton
+        services.AddSingleton<MLContext>(sp => new MLContext(seed: 1));
+        
         // Register the dengue forecast service
-        services.AddSingleton<IPredictionService<DengueForecastInput, DengueForecastOutput>, DengueForecastService>();
+        services.AddSingleton<IPredictionService<DengueForecastInput, DengueForecastOutput>, BasicDengueForecastService>();
+        services.AddSingleton<IPredictionService<AdvDengueForecastInput, DengueForecastOutput>, AdvanceDengueForecastService>();
         
         // Register specific service for easier injection
         // services.AddSingleton<DengueForecastService>();
 
         // Register weekly and monthly prediction services (stubs)
-        services.AddSingleton<WeeklyDengueForecastService>();
-        services.AddSingleton<MonthlyDengueForecastService>();
+        // services.AddSingleton<WeeklyDengueForecastService>();
+        // services.AddSingleton<MonthlyDengueForecastService>();
 
         return services;
     }

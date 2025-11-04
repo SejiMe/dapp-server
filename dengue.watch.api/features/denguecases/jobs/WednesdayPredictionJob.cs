@@ -11,9 +11,9 @@ public class WednesdayPredictionJob : IJob
     private readonly ILogger<WednesdayPredictionJob> _logger;
     private readonly ApplicationDbContext _db;
     private readonly IAggregatedWeeklyHistoricalWeatherRepository _aggregatedWeeklyRepository;
-    private readonly PredictionEnginePool<DengueForecastInput, DengueForecastOutput> _predictionEngine;
+    private readonly IPredictionService<AdvDengueForecastInput, DengueForecastOutput> _predictionEngine;
     private readonly DateExtraction _dateExtraction;
-    public WednesdayPredictionJob(ILogger<WednesdayPredictionJob> logger, ApplicationDbContext db, IAggregatedWeeklyHistoricalWeatherRepository aggregatedWeeklyRepository, PredictionEnginePool<DengueForecastInput, DengueForecastOutput> predictionEngine, DateExtraction dateExtraction)
+    public WednesdayPredictionJob(ILogger<WednesdayPredictionJob> logger, ApplicationDbContext db, IAggregatedWeeklyHistoricalWeatherRepository aggregatedWeeklyRepository, IPredictionService<AdvDengueForecastInput, DengueForecastOutput> predictionEngine, DateExtraction dateExtraction)
     {
         _logger = logger;
         _db = db;
@@ -52,8 +52,9 @@ public class WednesdayPredictionJob : IJob
                  
                 var fetchedSnapshot = await _aggregatedWeeklyRepository.GetWeeklyHistoricalWeatherSnapshotAsync(psgcCode,LagHistoricalWeatherYear, LagHistoricalWeatherWeek, cancellationToken);
 
-                DengueForecastInput forecastInput = new()
+                AdvDengueForecastInput forecastInput = new()
                 {
+                    PsgcCode = psgcCode,
                     TemperatureMean = (float)fetchedSnapshot.Temperature.Mean,
                     TemperatureMax = (float)fetchedSnapshot.Temperature.Max,
                     HumidityMean = (float)fetchedSnapshot.Humidity.Mean,
@@ -64,16 +65,21 @@ public class WednesdayPredictionJob : IJob
                     DominantWeatherCategory = fetchedSnapshot.DominantWeatherCategory,
                 };
 
-                var val = _predictionEngine.Predict(forecastInput);
+                var val = await _predictionEngine.PredictAsync(forecastInput);
 
                 PredictedWeeklyDengueCase dCase = new()
                 {
                     PsgcCode = psgcCode,
-                    LaggedIsoWeek = LagHistoricalWeatherWeek,
-                    LaggedIsoYear = LagHistoricalWeatherYear,
-                    PredictedIsoWeek = CurrentWeek,
-                    PredictedIsoYear = CurrentYear,
-                    PredictedValue = Convert.ToInt32(Math.Round(Convert.ToDecimal(val), 2))
+                    LaggedIsoWeek = dateParts.LaggedWeek,
+                    LaggedIsoYear = dateParts.LaggedYear,
+                    PredictedIsoWeek = dateParts.ISOWeek,
+                    PredictedIsoYear = dateParts.ISOYear,
+                    PredictedValue = Convert.ToInt32(Math.Round(Convert.ToDecimal(val.Score), 2)),
+                    LowerBound = val.LowerBound,
+                    UpperBound = val.UpperBound,
+                    ConfidencePercentage = val.ConfidencePercentage,
+                    ProbabilityOfOutbreak = val.ProbabilityOfOutbreak,
+                    RiskLevel = val.GetRiskLevel()
                 };
                 
                 // check if it exists 

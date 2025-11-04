@@ -12,14 +12,15 @@ public class GetPredictedDengueCasesByPsgcAndDate : IEndpoint
             .WithSummary("Get Prediction by Psgc and Date (yyyy-MM-dd)")
             .WithTags("Dengue Cases");
 
-        group.MapGet("detailed", Handler)
+        group.MapGet("{psgccode}", Handler)
             .Produces<IResult>();
         return group;
     }
     
-    public record GetDenguePredictionRequest(string psgccode, DateOnly dt);
+    public record GetDenguePredictionRequest(DateOnly dt);
     public record GetDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float valuePredicted);
     private static async Task<Results<Ok<GetDenguePredictionResponse>,NotFound<string>, BadRequest<string>, ProblemHttpResult>> Handler(
+        string psgccode,
         [AsParameters] GetDenguePredictionRequest _request,
         [FromServices] DateExtraction _dateExtraction,
         [FromServices] ApplicationDbContext _db,
@@ -30,27 +31,33 @@ public class GetPredictedDengueCasesByPsgcAndDate : IEndpoint
         {
             var dateParts = _dateExtraction.ExtractCurrentDateAndLaggedDate(_request.dt);
 
-           var bgyName =  _db.AdministrativeAreas
-               .Where(p => p.PsgcCode == _request.psgccode)
-               .Select(p => p.Name)
-               .SingleOrDefault();
-           
-           if(bgyName is null)
-               return TypedResults.BadRequest("Barangay Doesn't Exist");
-           
-           // check if it exists 
-           var data = _db.PredictedWeeklyDengues.Where(p =>
-                   p.PsgcCode == _request.psgccode && p.PredictedIsoWeek == dateParts.ISOWeek &&
-                   p.PredictedIsoYear == dateParts.ISOYear)
-               .SingleOrDefault();
+            var bgyName = _db.AdministrativeAreas
+                .Where(p => p.PsgcCode == psgccode)
+                .Select(p => p.Name)
+                .SingleOrDefault();
 
-           if (data == null)
-               return TypedResults.NotFound("Prediction Doesn't Exist");
-          
-            
+            if (bgyName is null)
+                throw new ValidationException("Barangay Doesn't Exist");
 
-            GetDenguePredictionResponse response = new(_request.psgccode,bgyName, dateParts.ISOYear, dateParts.ISOWeek, dateParts.LaggedWeek, dateParts.LaggedYear, data.PredictedValue );
+            // check if it exists 
+            var data = _db.PredictedWeeklyDengues.Where(p =>
+                    p.PsgcCode == psgccode && p.PredictedIsoWeek == dateParts.ISOWeek &&
+                    p.PredictedIsoYear == dateParts.ISOYear)
+                .SingleOrDefault();
+
+            if (data == null)
+                throw new NotFoundException("Prediction Doesn't Exist");
+
+            GetDenguePredictionResponse response = new(psgccode, bgyName, dateParts.ISOYear, dateParts.ISOWeek, dateParts.LaggedWeek, dateParts.LaggedYear, data.PredictedValue);
             return TypedResults.Ok(response);
+        }
+        catch (ValidationException)
+        {
+            throw;
+        }
+        catch (NotFoundException)
+        {
+            throw;
         }
         catch (Exception e)
         {

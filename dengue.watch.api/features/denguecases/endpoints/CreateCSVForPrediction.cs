@@ -7,7 +7,7 @@ public class CreateCsvForPrediction : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/dengue-cases/")
+        var group = app.MapGroup("/api/dengue-cases")
             .WithTags("Dengue Cases")
             .WithSummary("Create a CSV for Prediction in N8n");
 

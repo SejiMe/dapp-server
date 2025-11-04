@@ -72,7 +72,7 @@ public class CreateWeeklyBulkTrainingCSV : IEndpoint
         return Results.File(
             csvFile.Content,
             csvFile.ContentType,
-            csvFile.FileName,
+            "all-weekly-training-data.csv",
             enableRangeProcessing: false,
             lastModified: DateTimeOffset.UtcNow,
             entityTag: null);

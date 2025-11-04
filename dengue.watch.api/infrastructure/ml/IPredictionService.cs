@@ -27,32 +27,14 @@ public interface IPredictionService<TInput, TOutput>
     /// <param name="trainingData">Training data</param>
     /// <returns>Training metrics</returns>
     Task<ModelMetrics> TrainModelAsync();
-
+    
     /// <summary>
     /// Get model information
     /// </summary>
     /// <returns>Model information</returns>
     ModelInfo GetModelInfo();
+    
 }
 
-/// <summary>
-/// Model training metrics
-/// </summary>
-public record ModelMetrics(
-    double Accuracy,
-    double MeanAbsoluteError,
-    double RSquared,
-    DateTime TrainedAt,
-    int TrainingDataSize
-);
 
-/// <summary>
-/// Model information
-/// </summary>
-public record ModelInfo(
-    string Name,
-    string Version,
-    DateTime LastTrained,
-    bool IsLoaded,
-    string Description
-);
+
