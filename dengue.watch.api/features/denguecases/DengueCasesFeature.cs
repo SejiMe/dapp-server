@@ -38,8 +38,12 @@ public class DengueCasesFeature : IFeature
             q.AddTrigger(opts => opts
                 .ForJob(jobKey)
                 .WithIdentity("WeeklyPrediction-trigger")
-                .WithCronSchedule("0 30 17 ? * WED *",x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById(timeZoneId))
-                ));
+                // .WithCronSchedule("0 30 17 ? * WED *",x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById(timeZoneId))
+                // )
+                .WithCronSchedule("0 30 17 * * ?",
+                x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila")))
+                )
+                ;
         });
         
         

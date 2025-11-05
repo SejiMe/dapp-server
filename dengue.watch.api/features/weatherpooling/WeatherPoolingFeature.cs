@@ -47,13 +47,14 @@ public class WeatherPoolingFeature : IFeature
             var jobOptions = configuration
                 .GetSection(DailyWeatherPoolingJobOptions.SectionName)
                 .Get<DailyWeatherPoolingJobOptions>();
-            var cron = string.IsNullOrWhiteSpace(jobOptions?.Cron) ? "0 0 0 * * ?" : jobOptions!.Cron;
+            var cron = string.IsNullOrWhiteSpace(jobOptions?.Cron) ? "0 30 16 * * ?" : jobOptions!.Cron;
 
             q.AddTrigger(opts => opts
                 .ForJob(jobKey)
                 .WithIdentity("DailyWeatherPoolingJob-trigger")
                 .WithCronSchedule(cron,
-                    x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById(timeZoneId))
+                    // x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById(timeZoneId))
+        x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila"))
                 ));
         });
         return services;
