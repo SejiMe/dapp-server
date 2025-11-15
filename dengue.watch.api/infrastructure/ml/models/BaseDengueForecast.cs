@@ -8,7 +8,7 @@ public class BaseDengueForecast
     protected readonly ILogger _logger;
     protected readonly IWebHostEnvironment _hostEnv;
     protected double _standardDeviation;
-    private const float OUTBREAK_THRESHOLD = 10f; // Adjust based on your region
+    private const float OUTBREAK_THRESHOLD = 5f; // Adjust based on your region
 
     
     public BaseDengueForecast(

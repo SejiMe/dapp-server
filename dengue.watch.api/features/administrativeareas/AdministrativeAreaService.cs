@@ -85,7 +85,7 @@ public class AdministrativeAreaService : IAdministrativeAreaService
     {
         return await _context.AdministrativeAreas
             .Where(a => a.GeographicLevel.ToLower() == "municipality")
-            .OrderBy(a => a.PsgcCode)
+            .OrderBy(a => a.Name)
             .Select(a => new AdministrativeAreaDto(a.PsgcCode, a.Name, a.GeographicLevel, a.Latitude, a.Longitude))
             .ToListAsync(cancellationToken);
     }
@@ -95,7 +95,7 @@ public class AdministrativeAreaService : IAdministrativeAreaService
         var provincePrefix = GetProvincePrefix(provincePsgcCode);
         return await _context.AdministrativeAreas
             .Where(a => a.GeographicLevel.ToLower() == "municipality" && a.PsgcCode.StartsWith(provincePrefix))
-            .OrderBy(a => a.PsgcCode)
+            .OrderBy(a => a.Name)
             .Select(a => new AdministrativeAreaDto(a.PsgcCode, a.Name, a.GeographicLevel, a.Latitude, a.Longitude))
             .ToListAsync(cancellationToken);
     }
@@ -104,7 +104,7 @@ public class AdministrativeAreaService : IAdministrativeAreaService
     {
         return await _context.AdministrativeAreas
             .Where(a => a.GeographicLevel.ToLower() == "bgy")
-            .OrderBy(a => a.PsgcCode)
+            .OrderBy(a => a.Name)
             .Select(a => new AdministrativeAreaDto(a.PsgcCode, a.Name, a.GeographicLevel, a.Latitude, a.Longitude))
             .ToListAsync(cancellationToken);
     }
@@ -114,7 +114,7 @@ public class AdministrativeAreaService : IAdministrativeAreaService
         var cityOrMunicipalityPrefix = GetCityOrMunicipalityPrefix(cityOrMunicipalityPsgcCode);
         return await _context.AdministrativeAreas
             .Where(a => a.GeographicLevel.ToLower() == "bgy" && a.PsgcCode.StartsWith(cityOrMunicipalityPrefix))
-            .OrderBy(a => a.PsgcCode)
+            .OrderBy(a => a.Name)
             .Select(a => new AdministrativeAreaDto(a.PsgcCode, a.Name, a.GeographicLevel, a.Latitude, a.Longitude ))
             .ToListAsync(cancellationToken);
     }

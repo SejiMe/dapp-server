@@ -18,7 +18,7 @@ public class CreateManualAdvancePredictionByPsgcAndDate : IEndpoint
     }
     
     public record CreateDenguePredictionRequest(string psgccode, DateOnly dt);
-    public record CreateDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float valuePredicted, double probability);
+    public record CreateDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float value_predicted, double outbreak_probability);
     private static async Task<Results<Created<CreateDenguePredictionResponse>,Conflict<string>, BadRequest, ProblemHttpResult>> Handler(
         CreateDenguePredictionRequest _request,
         [FromServices] DateExtraction _dateExtraction,

@@ -18,7 +18,7 @@ public class GetPredictedDengueCasesByPsgcAndDate : IEndpoint
     }
     
     public record GetDenguePredictionRequest(DateOnly dt);
-    public record GetDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float valuePredicted);
+    public record GetDenguePredictionResponse(string psgccode, string barangay_name, int iso_year, int iso_week, int lagged_week, int lagged_year ,float value_predicted, double outbreak_probability);
     private static async Task<Results<Ok<GetDenguePredictionResponse>,NotFound<string>, BadRequest<string>, ProblemHttpResult>> Handler(
         string psgccode,
         [AsParameters] GetDenguePredictionRequest _request,
@@ -43,12 +43,22 @@ public class GetPredictedDengueCasesByPsgcAndDate : IEndpoint
             var data = _db.PredictedWeeklyDengues.Where(p =>
                     p.PsgcCode == psgccode && p.PredictedIsoWeek == dateParts.ISOWeek &&
                     p.PredictedIsoYear == dateParts.ISOYear)
-                .SingleOrDefault();
+                .FirstOrDefault();
 
             if (data == null)
                 throw new NotFoundException("Prediction Doesn't Exist");
 
-            GetDenguePredictionResponse response = new(psgccode, bgyName, dateParts.ISOYear, dateParts.ISOWeek, dateParts.LaggedWeek, dateParts.LaggedYear, data.PredictedValue);
+            GetDenguePredictionResponse response = new
+            (
+                psgccode, 
+                bgyName, 
+                dateParts.ISOYear, 
+                dateParts.ISOWeek, 
+                dateParts.LaggedWeek, 
+                dateParts.LaggedYear, 
+                data.PredictedValue,
+                data.ProbabilityOfOutbreak
+                );
             return TypedResults.Ok(response);
         }
         catch (ValidationException)
