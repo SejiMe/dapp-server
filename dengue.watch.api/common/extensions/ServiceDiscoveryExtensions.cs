@@ -107,6 +107,8 @@ public static class ServiceDiscoveryExtensions
             .Where(t => t.IsClass && !t.IsAbstract && t.GetInterfaces().Contains(typeof(IEndpoint)))
             .ToList();
 
+        var apiGroup = app.MapGroup("/api/");
+
         foreach (var endpointType in endpointTypes)
         {
             try
@@ -119,7 +121,7 @@ public static class ServiceDiscoveryExtensions
 
                 if (mapMethod != null)
                 {
-                    mapMethod.Invoke(null, [app]);
+                    mapMethod.Invoke(null, [apiGroup]);
                 }
             }
             catch (Exception ex)
@@ -141,6 +143,8 @@ public static class ServiceDiscoveryExtensions
     {
         assembly ??= Assembly.GetCallingAssembly();
 
+        var hubGroup = app.MapGroup("/hub/");
+
         var hubTypes = assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && t.GetInterfaces().Contains(typeof(IHub)))
             .ToList();
@@ -157,7 +161,7 @@ public static class ServiceDiscoveryExtensions
 
                 if (mapMethod != null)
                 {
-                    mapMethod.Invoke(null, [app]);
+                    mapMethod.Invoke(null, [hubGroup]);
                 }
             }
             catch (Exception ex)

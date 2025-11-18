@@ -6,7 +6,7 @@ public class TestDateExtraction : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/dengue-cases")
+        var group = app.MapGroup("dengue-cases")
             .WithSummary("Test Date Extraction Service")
             .WithName("TestDateExtraction")
             .WithTags("Dengue Cases");

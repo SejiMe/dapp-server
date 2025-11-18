@@ -9,7 +9,7 @@ public sealed class CreateWeeklyTrainingWeatherCsv : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/training-data")
+        var group = app.MapGroup("training-data")
             .WithTags("Training Data Pipeline")
             .WithOpenApi();
 

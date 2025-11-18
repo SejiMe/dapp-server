@@ -11,7 +11,7 @@ namespace dengue.watch.api.features.denguecases.endpoints
     {
         public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/dengue-cases")
+            var group = app.MapGroup("dengue-cases")
             .WithTags("Dengue Cases")
             .WithSummary("Get History (recorded) Dengue Cases per Barangay as of 2014");
 

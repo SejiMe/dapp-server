@@ -7,7 +7,7 @@ public class GetCurrentDateWeekSummary : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("api/weather-summary")
+        var group = app.MapGroup("weather-summary")
             .WithName("GetCurrentDateWeekSummary")
             .WithTags("Weather Summary");
 
@@ -30,6 +30,5 @@ public class GetCurrentDateWeekSummary : IEndpoint
         {
             return TypedResults.InternalServerError(e);
         }
-         
     }
 }

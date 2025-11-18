@@ -7,7 +7,7 @@ public class GetCurrentDateLagged2WeekSummary : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("api/weather-summary")
+        var group = app.MapGroup("weather-summary")
             .WithName("GetCurrentDateLaggedWeekSummary")
             .WithTags("Weather Summary");
 
@@ -30,6 +30,5 @@ public class GetCurrentDateLagged2WeekSummary : IEndpoint
         {
             return TypedResults.InternalServerError(e);
         }
-         
     }
 }

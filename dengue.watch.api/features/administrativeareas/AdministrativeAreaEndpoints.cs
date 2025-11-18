@@ -6,7 +6,7 @@ public class AdministrativeAreaEndpoints : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/administrative-areas")
+        var group = app.MapGroup("administrative-areas")
             .WithTags("Administrative Areas")
             .WithOpenApi();
 

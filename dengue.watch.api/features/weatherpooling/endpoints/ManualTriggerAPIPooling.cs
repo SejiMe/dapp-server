@@ -8,7 +8,7 @@ public class ManualTriggerAPIPooling : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/weatherpooling")
+        var group = app.MapGroup("weatherpooling")
             .WithTags("Weather Pooling")
             .WithOpenApi();
 

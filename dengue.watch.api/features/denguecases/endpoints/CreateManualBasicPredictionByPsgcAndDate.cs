@@ -8,7 +8,7 @@ public class CreateManualBasicPredictionByPsgcAndDate : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/dengue-cases")
+        var group = app.MapGroup("dengue-cases")
             .WithSummary("Create Manual Prediction by Psgc and Date (yyyy-MM-dd)")
             .WithTags("Dengue Cases");
 

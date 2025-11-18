@@ -13,7 +13,7 @@ public class GetDailyWeatherDataPerArea : IEndpoint
     private record DailyWeatherRequest(string psgccode, DateOnly? startDate, DateOnly? endDate);
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/weatherpooling")
+        var group = app.MapGroup("weatherpooling")
             .WithTags("Weather Pooling")
             .WithOpenApi();
 

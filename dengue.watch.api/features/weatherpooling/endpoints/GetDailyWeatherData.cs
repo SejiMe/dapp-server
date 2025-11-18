@@ -11,7 +11,7 @@ public class GetDailyWeatherDataPooled : IEndpoint
     private record WeatherPooledData(string PsgcCode, string AdministrativeAreaName, DateTime Date, int WeatherCode, string WeatherCodeDescription, double PrecipitationSum, double RelativeHumidityMean, double TemperatureMean);
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/weatherpooling")
+        var group = app.MapGroup("weatherpooling")
             .WithTags("Weather Pooling")
             .WithOpenApi();
 

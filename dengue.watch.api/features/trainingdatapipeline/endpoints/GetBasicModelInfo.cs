@@ -6,7 +6,7 @@ public class GetBasicModelInfo : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("api/training-data")
+        var group = app.MapGroup("training-data")
             .WithTags("Training Data Pipeline")
             .WithSummary("Get Advanced Model Info");
 
