@@ -68,6 +68,28 @@ public class WeatherDataAPI : IWeatherDataAPI
         }
     }
 
+
+    
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="latitude"></param>
+/// <param name="longitude"></param>
+/// <param name="cancellationToken"></param>
+/// <param name="startDate"></param>
+/// <param name="endDate"></param>
+/// <returns></returns>
+/// <exception cref="ValidationException"></exception>
+/// <exception cref="InvalidOperationException"></exception> <summary>
+/// 
+/// </summary>
+/// <param name="latitude"></param>
+/// <param name="longitude"></param>
+/// <param name="cancellationToken"></param>
+/// <param name="startDate"></param>
+/// <param name="endDate"></param>
+/// <returns></returns>
     public async Task<WeatherHistoricalResponse> GetHistoricalLongDataAsync(decimal latitude, decimal longitude,CancellationToken cancellationToken, DateOnly startDate, DateOnly endDate )
     {
         var url = $"v1/archive?" +
