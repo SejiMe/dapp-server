@@ -1,4 +1,5 @@
 using System.Globalization;
+using dengue.watch.api.common.helpers;
 using dengue.watch.api.features.denguecases.services;
 using Microsoft.Extensions.ML;
 using Quartz;
@@ -79,7 +80,8 @@ public class WednesdayPredictionJob : IJob
                     UpperBound = val.UpperBound,
                     ConfidencePercentage = val.ConfidencePercentage,
                     ProbabilityOfOutbreak = val.ProbabilityOfOutbreak,
-                    RiskLevel = val.GetRiskLevel()
+                    RiskLevel = val.GetRiskLevel(),
+                    MonthName = IsoWeekHelper.GetMonthNameFromIsoWeek(dateParts.ISOYear, dateParts.ISOWeek)
                 };
                 
                 // check if it exists 

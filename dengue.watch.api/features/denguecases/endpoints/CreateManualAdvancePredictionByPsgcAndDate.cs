@@ -69,7 +69,8 @@ public class CreateManualAdvancePredictionByPsgcAndDate : IEndpoint
                 UpperBound = val.UpperBound,
                 ConfidencePercentage = val.ConfidencePercentage,
                 ProbabilityOfOutbreak = val.ProbabilityOfOutbreak,
-                RiskLevel = val.GetRiskLevel()
+                RiskLevel = val.GetRiskLevel(),
+                MonthName = IsoWeekHelper.GetMonthNameFromIsoWeek(dateParts.ISOYear, dateParts.ISOWeek)
             };
 
 

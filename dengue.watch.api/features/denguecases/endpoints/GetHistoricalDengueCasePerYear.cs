@@ -15,11 +15,11 @@ namespace dengue.watch.api.features.denguecases.endpoints
             .WithTags("Dengue Cases")
             .WithSummary("Get History (recorded) Dengue Cases per Barangay as of 2014");
 
-            group.MapGet("historical/{psgccode}", Handler);
+            group.MapGet("historical-year/{psgccode}", Handler);
             return group;
         }
 
-        private static async Task<Results<Ok<HistoricalDengueCases>, NotFound<ProblemDetails>, ProblemHttpResult>> Handler(string psgccode,[FromServices] ILogger<GetHistoricalDengueCasePerYear> _logger, [FromServices] ApplicationDbContext _db)
+        private static async Task<Results<Ok<HistoricalYearlyDengueCases>, NotFound<ProblemDetails>, ProblemHttpResult>> Handler(string psgccode,[FromServices] ILogger<GetHistoricalDengueCasePerYear> _logger, [FromServices] ApplicationDbContext _db)
         {
             try
             {
@@ -34,15 +34,15 @@ namespace dengue.watch.api.features.denguecases.endpoints
                 int currentYear = DateTime.Now.Year;
 
                 int[] years = Enumerable.Range(startYear, currentYear - startYear + 1).ToArray();
-                HistoricalDengueCases dengueCasesResults = new();
+                HistoricalYearlyDengueCases dengueCasesResults = new();
                 dengueCasesResults.psgccode = psgccode;
-                dengueCasesResults.TotalDengueCases = new List<YearlyTotalDengueCase>();
+                dengueCasesResults.recorded_cases = new List<YearlyTotalDengueCase>();
 
 
                 foreach (var y in years)
                 {
                     var count = _db.WeeklyDengueCases.Where(p => p.PsgcCode == psgccode && p.Year == y).Sum(p => p.CaseCount);
-                    dengueCasesResults.TotalDengueCases.Add(new(y.ToString(), count));
+                    dengueCasesResults.recorded_cases.Add(new(y.ToString(), count));
                 }
 
                 return TypedResults.Ok(dengueCasesResults);

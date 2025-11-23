@@ -178,6 +178,8 @@ public class PredictedWeeklyDengueCase
 	[Required]
 	[MaxLength(10)]
 	public string PsgcCode { get; set; } = string.Empty;
+	
+	public string? MonthName {get; set;} = string.Empty;
 
 	[ForeignKey(nameof(PsgcCode))]
 	public AdministrativeArea? AdministrativeArea { get; set; }
@@ -272,6 +274,9 @@ public static class EntityModelConfiguration
 			entity.Property(p => p.ProbabilityOfOutbreak).HasColumnName("probability_of_outbreak");
 			entity.Property(p => p.RiskLevel).HasColumnName("risk_level");
 			
+			entity.Property(p => p.MonthName).HasColumnName("month_name");
+			
+
 			
 			entity.HasOne(m => m.AdministrativeArea)
 			.WithMany(a => a.PredictedWeeklyDengueCases)

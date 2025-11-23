@@ -1,5 +1,6 @@
 global using dengue.watch.api.common.interfaces;
 global using dengue.watch.api.common.extensions;
+global using dengue.watch.api.common.helpers;
 global using dengue.watch.api.common.services;
 global using dengue.watch.api.common.options;
 global using dengue.watch.api.common.models;

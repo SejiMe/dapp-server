@@ -37,7 +37,7 @@ public class GetPredictedDengueCasesByPsgcAndDate : IEndpoint
                 .SingleOrDefault();
 
             if (bgyName is null)
-                throw new ValidationException("Barangay Doesn't Exist");
+                throw new NotFoundException("Barangay Doesn't Exist");
 
             // check if it exists 
             var data = _db.PredictedWeeklyDengues.Where(p =>
