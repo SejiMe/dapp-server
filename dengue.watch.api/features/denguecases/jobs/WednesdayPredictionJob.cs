@@ -48,9 +48,15 @@ public class WednesdayPredictionJob : IJob
             // var res = await _db.PredictedWeeklyDengues.Where( p =>   )
             foreach (string psgcCode in barangays)
             {
-                 // Fetch data first if this has already data 
-                 
-                 
+               bool hasData = await _db.PredictedWeeklyDengues.AnyAsync(a =>
+                    a.PsgcCode == psgcCode &&
+                    a.PredictedIsoWeek == dateParts.ISOWeek &&
+                    a.PredictedIsoYear == dateParts.ISOYear,
+                    cancellationToken);
+
+                if (hasData)
+                    continue;
+                
                 var fetchedSnapshot = await _aggregatedWeeklyRepository.GetWeeklyHistoricalWeatherSnapshotAsync(psgcCode,LagHistoricalWeatherYear, LagHistoricalWeatherWeek, cancellationToken);
 
                 AdvDengueForecastInput forecastInput = new()

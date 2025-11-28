@@ -50,6 +50,8 @@ namespace dengue.watch.api.features.denguecases.endpoints
             // check if it exists 
             List<GetDenguePrediction> data = _db.PredictedWeeklyDengues.Where(p =>
                     p.PsgcCode == psgccode)
+                    .OrderByDescending(ppp => ppp.PredictedIsoWeek)
+                    .OrderByDescending(pp => pp.PredictedIsoYear)
                     .Skip((_params.page_number - 1) * _params.page_size)
                     .Take(_params.page_size)
                     .Select(p =>

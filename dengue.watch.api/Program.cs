@@ -114,7 +114,8 @@ var corsOrigins = string.IsNullOrWhiteSpace(corsOriginsString)
         .Split(',')
         .Select(origin => origin.Trim())
         .Where(origin => !string.IsNullOrEmpty(origin))
-        .ToArray();  
+        .ToArray(); 
+        
 builder.Services.AddCors(options =>
 {
     if (!corsOrigins.Any())
