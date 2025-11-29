@@ -40,7 +40,8 @@ namespace dengue.watch.api.features.denguecases.endpoints
                         p.Key.ToString(), p.Sum(x => x.CaseCount)
                         )
                     )
-                .ToList();
+                .ToList()
+                .OrderByDescending(pz => pz.year);
                 
                 dengueCasesResults.recorded_cases.AddRange(cases);
                 dengueCasesResults.psgccode = null;

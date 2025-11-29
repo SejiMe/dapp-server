@@ -54,8 +54,7 @@ namespace dengue.watch.api.features.denguecases.endpoints
                 _logger.LogError(e.Message, e);
                 return TypedResults.Problem(e.Message, e.StackTrace, 500, e.InnerException?.ToString());
             }
-            
-            return default;
+
         }
     }
 }

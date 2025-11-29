@@ -14,8 +14,8 @@ public class CreateCsvForPrediction : IEndpoint
         group.MapPost("create-bulk", Handler);
         return group;
     }
-
-    private static async Task<IResult> Handler([FromServices] ApplicationDbContext db)
+    public record CreateCSVRequest(int starting_week, int last_week);
+    private static async Task<IResult> Handler([FromBody] CreateCSVRequest request, [FromServices] ApplicationDbContext db)
     {
 
         try
@@ -24,17 +24,17 @@ public class CreateCsvForPrediction : IEndpoint
 
 
             DateTime[] dateTimes = [
-                // new DateTime(2014, 1, 1),
-                // new DateTime(2015, 1, 1),
-                // new DateTime(2016, 1, 1),
-                // new DateTime(2017, 1, 1),
-                // new DateTime(2018, 1, 1),
-                // new DateTime(2019, 1, 1),
-                // new DateTime(2020, 1, 1),
-                // new DateTime(2021, 1, 1),
-                // new DateTime(2022, 1, 1),
-                // new DateTime(2023, 1, 1),
-                // new DateTime(2024, 1, 1),    
+                new DateTime(2014, 1, 1),
+                new DateTime(2015, 1, 1),
+                new DateTime(2016, 1, 1),
+                new DateTime(2017, 1, 1),
+                new DateTime(2018, 1, 1),
+                new DateTime(2019, 1, 1),
+                new DateTime(2020, 1, 1),
+                new DateTime(2021, 1, 1),
+                new DateTime(2022, 1, 1),
+                new DateTime(2023, 1, 1),
+                new DateTime(2024, 1, 1),    
                 new DateTime(2025, 1, 1),    
             ];
 
@@ -52,10 +52,10 @@ public class CreateCsvForPrediction : IEndpoint
                 foreach (int year in Years)
                 {
 
-                    var weeks = 48;
+                    var weeks = request.last_week;
                     // ISOWeek.GetWeeksInYear(year);
                     int element = 0;
-                    int week = 1;
+                    int week = request.starting_week;
 
                     while (week <= weeks)
                     {
