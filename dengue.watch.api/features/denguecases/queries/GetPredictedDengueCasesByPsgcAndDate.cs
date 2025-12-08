@@ -1,8 +1,6 @@
-using dengue.watch.api.features.denguecases.services;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.ML;
 
-namespace dengue.watch.api.features.denguecases.endpoints;
+namespace dengue.watch.api.features.denguecases.queries;
 
 public class GetPredictedDengueCasesByPsgcAndDate : IEndpoint
 {

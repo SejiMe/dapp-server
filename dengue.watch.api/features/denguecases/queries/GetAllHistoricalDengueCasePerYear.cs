@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using dengue.watch.api.features.denguecases.dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace dengue.watch.api.features.denguecases.endpoints
+namespace dengue.watch.api.features.denguecases.queries
 {
     public class GetAllHistoricalDengueCasePerYear : IEndpoint
     {

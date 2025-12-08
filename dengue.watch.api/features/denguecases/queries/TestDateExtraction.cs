@@ -1,6 +1,4 @@
-using dengue.watch.api.features.denguecases.services;
-
-namespace dengue.watch.api.features.denguecases.endpoints;
+namespace dengue.watch.api.features.denguecases.queries;
 
 public class TestDateExtraction : IEndpoint
 {

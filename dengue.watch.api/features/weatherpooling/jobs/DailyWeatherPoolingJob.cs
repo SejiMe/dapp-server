@@ -40,8 +40,6 @@ public class DailyWeatherPoolingJob : IJob
         {
             try
             {
-                // TODO refactoring
-                // eto yung nag eextract ng data sa may Open Meteo API
 
                 var apiResponse = await _weatherDataApi.GetHistoricalDataAsync(lat, lon, cancellationToken, null);
                 var dayData = _processor.Get1DayData(apiResponse);

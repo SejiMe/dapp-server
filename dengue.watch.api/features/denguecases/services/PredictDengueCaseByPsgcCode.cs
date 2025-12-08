@@ -1,7 +1,5 @@
 using System.Globalization;
 using Microsoft.Extensions.ML;
-using Microsoft.ML;
-using Npgsql.PostgresTypes;
 
 namespace dengue.watch.api.features.denguecases.services;
 
@@ -17,7 +15,7 @@ public class PredictDengueCaseService(
     IAggregatedWeeklyHistoricalWeatherRepository _weeklyHistoricalWeatherRepository
     ) : IPredictDengueCaseService
 {
-    // This either throw an error or Logs a success
+
     // This will only be run
 
 
@@ -32,7 +30,11 @@ public class PredictDengueCaseService(
 
         int IsoWeek = ISOWeek.GetWeekOfYear(weeklyDataDate);
         int IsoYear = ISOWeek.GetYear(weeklyDataDate);
-       
+        
+        // FIXME fix this
+
+
+
         /* string psgcCode,
             IReadOnlyCollection<int> dengueYears,
             int? dengueWeekNumber,
@@ -41,8 +43,14 @@ public class PredictDengueCaseService(
         // Get Data from repository
         //_weeklyHistoricalWeatherRepository.GetWeeklySnapshotsAsync(psgcCode, );
 
-        // TODO implement
-        // var res = _predictionEngine.Predict();
+        /*
+            * TODO implement
+            * var res = _predictionEngine.Predict();
+        */
+        
+        
+        // TODO
+        // Work
         throw new NotImplementedException();
     }
     

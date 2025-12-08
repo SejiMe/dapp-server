@@ -1,31 +1,29 @@
-using dengue.watch.api.features.denguecases.services;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.ML;
 
-namespace dengue.watch.api.features.denguecases.endpoints;
+namespace dengue.watch.api.features.denguecases.commands;
 
-public class CreateManualAdvancePredictionByPsgcAndDate : IEndpoint
+public class CreateManualBasicPredictionByPsgcAndDate : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("dengue-cases")
-            .WithSummary("Manual Advance Prediction by Psgc and Date (yyyy-MM-dd)")
+            .WithSummary("Create Manual Prediction by Psgc and Date (yyyy-MM-dd)")
             .WithTags("Dengue Cases");
 
-        group.MapPost("advance", Handler)
+        group.MapPost("basic", Handler)
             .Produces<IResult>();
         return group;
     }
     
     public record CreateDenguePredictionRequest(string psgccode, DateOnly dt);
-    public record CreateDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float value_predicted, double outbreak_probability);
+    public record CreateDenguePredictionResponse(string psgccode, string barangayName, int iso_year, int iso_week, int lagged_week, int lagged_year ,float valuePredicted, double probability);
     private static async Task<Results<Created<CreateDenguePredictionResponse>,Conflict<string>, BadRequest, ProblemHttpResult>> Handler(
         CreateDenguePredictionRequest _request,
         [FromServices] DateExtraction _dateExtraction,
         [FromServices] ApplicationDbContext _db,
         [FromServices] IAggregatedWeeklyHistoricalWeatherRepository _repository,
         // [FromServices] PredictionEnginePool<DengueForecastInput, DengueForecastOutput> _predictionEngine,
-        [FromServices] IPredictionService<AdvDengueForecastInput, DengueForecastOutput> _predictionEngine,
+        [FromServices] IPredictionService<DengueForecastInput, DengueForecastOutput> _predictionEngine,
         CancellationToken cancellation = default)
     {
         try
@@ -42,9 +40,8 @@ public class CreateManualAdvancePredictionByPsgcAndDate : IEndpoint
             
             var fetchedSnapshot = await _repository.GetWeeklyHistoricalWeatherSnapshotAsync(_request.psgccode,dateParts.LaggedYear, dateParts.LaggedWeek, cancellation);
             
-            AdvDengueForecastInput forecastInput = new()
+            DengueForecastInput forecastInput = new()
             {
-                PsgcCode = _request.psgccode,
                 TemperatureMean = (float)fetchedSnapshot.Temperature.Mean,
                 TemperatureMax = (float)fetchedSnapshot.Temperature.Max,
                 HumidityMean = (float)fetchedSnapshot.Humidity.Mean,

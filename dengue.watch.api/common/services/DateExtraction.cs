@@ -8,6 +8,31 @@ public class DateExtraction
     private static readonly CalendarWeekRule _weekRule = CalendarWeekRule.FirstFourDayWeek;
     private static readonly DayOfWeek _firstDayOfWeek = DayOfWeek.Monday;
 
+    
+    /// <summary>
+    /// Extracts the ISO week, ISO year, and lagged week, lagged year (current week - 2 weeks)
+    /// </summary>
+    /// <param name="date">The date to extract information from</param>
+    /// <returns>Tuple of (ISOWeek, ISOYear, LaggedWeek, LaggedYear)</returns>
+    public (int ISOWeek, int ISOYear, int LaggedWeek, int LaggedYear) ExtractCurrentDateAndLaggedDateYearMinus1(DateOnly date)
+    {
+        // Get ISO week and year for current date
+        var currentDateTime = date.ToDateTime(TimeOnly.MinValue);
+        int currentISOWeek = _calendar.GetWeekOfYear(currentDateTime, _weekRule, _firstDayOfWeek);
+        int currentISOYear = GetISOYear(currentDateTime, currentISOWeek);
+
+        // Calculate lagged date (2 weeks prior)
+        var laggedDate = date.AddYears(-1);
+        var laggedDateTime = laggedDate.ToDateTime(TimeOnly.MinValue);
+        
+        // Get ISO week and year for lagged date
+        int laggedISOWeek = _calendar.GetWeekOfYear(laggedDateTime, _weekRule, _firstDayOfWeek);
+        int laggedISOYear = GetISOYear(laggedDateTime, laggedISOWeek);
+
+        return (currentISOWeek, currentISOYear, laggedISOWeek, laggedISOYear);
+    }
+    
+    
     /// <summary>
     /// Extracts the ISO week, ISO year, and lagged week, lagged year (current week - 2 weeks)
     /// </summary>

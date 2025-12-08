@@ -98,6 +98,17 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
         _logger = logger;
     }
 
+    /// <summary>
+    /// This Service method is for getting the weekly aggregated data for Training a Model
+    /// Either you use a weekly basis range (Bulk Fetching) or per week basis.
+    /// </summary>
+    /// <param name="psgcCode"></param>
+    /// <param name="dengueYears"></param>
+    /// <param name="dengueWeekNumber"></param>
+    /// <param name="dengueWeekRange"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="ValidationException"></exception>
     public async Task<WeeklyTrainingWeatherResult> GetWeeklySnapshotsAsync(
         string psgcCode,
         IReadOnlyCollection<int> dengueYears,
@@ -148,12 +159,25 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
 
         try
         {
-            var dengueRecords = await QueryDengueCasesAsync(
+             List<DengueWeeklyRecord>? dengueRecords = [];
+            
+            if(dengueWeekNumber.HasValue){
+                dengueRecords.AddRange(await QueryDengueCasesAsync(
                 psgcCode,
                 dengueYears,
                 dengueWeekNumber,
-                dengueWeekRange,
-                cancellationToken);
+                cancellationToken));
+            }
+            
+            else if (dengueWeekRange.HasValue)
+            {
+                dengueRecords.AddRange(await QueryDengueCasesAsync(
+                    psgcCode,
+                    dengueYears,
+                    dengueWeekRange,
+                    cancellationToken));
+            
+            }
 
             if (dengueRecords.Count == 0)
             {
@@ -265,7 +289,15 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
         }
     }
 
-    // Currently Working
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="psgc"></param>
+    /// <param name="year"></param>
+    /// <param name="isoweek"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="ValidationException"></exception> 
     public async Task<AggregatedWeeklyHistoricalWeatherSnapshot> GetWeeklyHistoricalWeatherSnapshotAsync(string psgc, int year, int isoweek, CancellationToken cancellationToken = default)
     {
         if (psgc is not { Length: 10 })
@@ -340,9 +372,6 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
                 mostCommonDescription,
                 isWetWeek
                 );
-            
-            
-            
             return aggregatedData;
         }
         catch (Exception e)
@@ -382,6 +411,17 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
     {
         var date = ISOWeek.ToDateTime(dengueYear, dengueWeek, DayOfWeek.Monday);
         var lagDate = date.AddDays(-14);
+        var lagYear = ISOWeek.GetYear(lagDate);
+        var lagWeek = ISOWeek.GetWeekOfYear(lagDate);
+        return (lagYear, lagWeek);
+    }
+
+    private static (int Year, int WeekNumber) CalculateLagYear(int dengueYear, int dengueWeek)
+    {
+        var date = ISOWeek.ToDateTime(dengueYear, dengueWeek, DayOfWeek.Monday);
+
+        var lagDate = date.AddYears(-1);
+        
         var lagYear = ISOWeek.GetYear(lagDate);
         var lagWeek = ISOWeek.GetWeekOfYear(lagDate);
         return (lagYear, lagWeek);
@@ -453,10 +493,56 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
         return new QueryInfo(sqlBuilder.ToString(), parameters);
     }
 
+    /// <summary>
+    /// This function fetches the Dengue Weekly Record on a weekly basis
+    /// </summary>
+    /// <param name="psgcCode">Your Barangay Level PSGC Code</param>
+    /// <param name="dengueYears">The year of a recorded Dengue Cases</param>
+    /// <param name="dengueWeekNumber">The ISO week of a recorded Dengue Cases</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List of <see cref="DengueWeeklyRecord"/></returns>
     private async Task<List<DengueWeeklyRecord>> QueryDengueCasesAsync(
         string psgcCode,
         IReadOnlyCollection<int> dengueYears,
         int? dengueWeekNumber,
+        CancellationToken cancellationToken)
+    {
+        await _commandSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            // using var scope = _serviceScopeFactory.CreateScope();
+            // var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dengueCasesQuery = _dbContext.WeeklyDengueCases
+                .AsNoTracking()
+                .Where(caseRecord => caseRecord.PsgcCode == psgcCode && dengueYears.Contains(caseRecord.Year));
+
+            dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber == dengueWeekNumber.Value);
+
+            return await dengueCasesQuery
+                .Select(caseRecord => new DengueWeeklyRecord(caseRecord.Year, caseRecord.WeekNumber, caseRecord.CaseCount))
+                .ToListAsync(cancellationToken);
+        }
+        finally
+        {
+            _commandSemaphore.Release();
+        }
+        
+    }
+
+
+    /// <summary>
+    /// This function fetches the Dengue Weekly Record on a weekly range basis
+    /// </summary>
+    /// <param name="psgcCode"></param>
+    /// <param name="dengueYears"></param>
+    /// <param name="From">Tuple Value for Starting ISO Week Range</param>
+    /// <param name="To">Tuple Value for End ISO Week Range</param>
+    /// <param name="dengueWeekRange">The tuple dengue week Range</param>
+    /// <param name="cancellationToken">Your cancellation here.</param>
+    /// <returns>List of <see cref="DengueWeeklyRecord"/></returns>
+    private async Task<List<DengueWeeklyRecord>> QueryDengueCasesAsync(
+        string psgcCode,
+        IReadOnlyCollection<int> dengueYears,
         (int From, int To)? dengueWeekRange,
         CancellationToken cancellationToken)
     {
@@ -469,15 +555,11 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
                 .AsNoTracking()
                 .Where(caseRecord => caseRecord.PsgcCode == psgcCode && dengueYears.Contains(caseRecord.Year));
 
-            if (dengueWeekNumber.HasValue)
-            {
-                dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber == dengueWeekNumber.Value);
-            }
-            else if (dengueWeekRange.HasValue)
-            {
+            
+           
                 var (fromWeek, toWeek) = dengueWeekRange.Value;
                 dengueCasesQuery = dengueCasesQuery.Where(caseRecord => caseRecord.WeekNumber >= fromWeek && caseRecord.WeekNumber <= toWeek);
-            }
+           
 
             return await dengueCasesQuery
                 .Select(caseRecord => new DengueWeeklyRecord(caseRecord.Year, caseRecord.WeekNumber, caseRecord.CaseCount))

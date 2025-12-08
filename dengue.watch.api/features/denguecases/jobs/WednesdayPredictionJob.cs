@@ -39,25 +39,51 @@ public class WednesdayPredictionJob : IJob
             var currentDate = DateTime.Now;
 
             var dateParts = _dateExtraction.ExtractCurrentDateAndLaggedDate(DateOnly.FromDateTime(currentDate));
-            var CurrentWeek = dateParts.ISOWeek;
-            var CurrentYear = dateParts.ISOYear;
-           
-            int LagHistoricalWeatherWeek = dateParts.LaggedWeek;
-            int LagHistoricalWeatherYear =  dateParts.LaggedYear;
             
-            // var res = await _db.PredictedWeeklyDengues.Where( p =>   )
+
+            
+            var dictData = await _db.PredictedWeeklyDengues.Where(a =>
+                    a.PredictedIsoWeek == dateParts.ISOWeek &&
+                    a.PredictedIsoYear == dateParts.ISOYear)
+                .ToDictionaryAsync(title => title.PsgcCode, content => content );
+            
             foreach (string psgcCode in barangays)
             {
-               bool hasData = await _db.PredictedWeeklyDengues.AnyAsync(a =>
-                    a.PsgcCode == psgcCode &&
-                    a.PredictedIsoWeek == dateParts.ISOWeek &&
-                    a.PredictedIsoYear == dateParts.ISOYear,
-                    cancellationToken);
 
-                if (hasData)
+                // If data does exist already
+                if (dictData.TryGetValue(psgcCode, out var predictedDengue))
+                {
+                    var snapShot = await _aggregatedWeeklyRepository.GetWeeklyHistoricalWeatherSnapshotAsync(psgcCode,dateParts.LaggedYear, dateParts.LaggedWeek, cancellationToken);
+                    
+                    AdvDengueForecastInput advForecastInput = new()
+                    {
+                        PsgcCode = psgcCode,
+                        TemperatureMean = (float)snapShot.Temperature.Mean,
+                        TemperatureMax = (float)snapShot.Temperature.Max,
+                        HumidityMean = (float)snapShot.Humidity.Mean,
+                        HumidityMax = (float)snapShot.Humidity.Max,
+                        PrecipitationMean = (float)snapShot.Precipitation.Mean,
+                        PrecipitationMax = (float)snapShot.Precipitation.Max,
+                        IsWetWeek = snapShot.IsWetWeek ? "TRUE" : "FALSE",
+                        DominantWeatherCategory = snapShot.DominantWeatherCategory,
+                    };
+                    
+                    
+                    var updateVal = await _predictionEngine.PredictAsync(advForecastInput);
+                    
+                    predictedDengue.LaggedIsoWeek =  dateParts.LaggedWeek;
+                    predictedDengue.LaggedIsoYear = dateParts.LaggedYear;
+                    predictedDengue.PredictedValue = Convert.ToInt32(Math.Round(Convert.ToDecimal(updateVal.Score), 2));
+                    predictedDengue.LowerBound = updateVal.LowerBound;
+                    predictedDengue.UpperBound = updateVal.UpperBound;
+                    predictedDengue.ConfidencePercentage = updateVal.ConfidencePercentage;
+                    predictedDengue.ProbabilityOfOutbreak = updateVal.ProbabilityOfOutbreak;
+                    predictedDengue.RiskLevel = updateVal.GetRiskLevel();
+                    
                     continue;
+                }
                 
-                var fetchedSnapshot = await _aggregatedWeeklyRepository.GetWeeklyHistoricalWeatherSnapshotAsync(psgcCode,LagHistoricalWeatherYear, LagHistoricalWeatherWeek, cancellationToken);
+                var fetchedSnapshot = await _aggregatedWeeklyRepository.GetWeeklyHistoricalWeatherSnapshotAsync(psgcCode,dateParts.LaggedYear, dateParts.LaggedWeek, cancellationToken);
 
                 AdvDengueForecastInput forecastInput = new()
                 {
@@ -71,9 +97,8 @@ public class WednesdayPredictionJob : IJob
                     IsWetWeek = fetchedSnapshot.IsWetWeek ? "TRUE" : "FALSE",
                     DominantWeatherCategory = fetchedSnapshot.DominantWeatherCategory,
                 };
-
                 var val = await _predictionEngine.PredictAsync(forecastInput);
-
+                
                 PredictedWeeklyDengueCase dCase = new()
                 {
                     PsgcCode = psgcCode,
@@ -99,11 +124,7 @@ public class WednesdayPredictionJob : IJob
         {
             _logger.LogError(e, "Failed Processing Prediction Job");
         }
-        
-       
-        
         _logger.LogInformation("Finished Predicting Values at {Time}", DateTimeOffset.UtcNow);
-
     }
     
     

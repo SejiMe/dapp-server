@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace dengue.watch.api.features.denguecases.endpoints
+namespace dengue.watch.api.features.denguecases.commands
 {
     public class BulkUpdateEndpoint : IEndpoint
     {

@@ -1,7 +1,7 @@
 using System.Globalization;
 using CsvHelper;
 
-namespace dengue.watch.api.features.denguecases.endpoints;
+namespace dengue.watch.api.features.denguecases.commands;
 
 public class CreateCsvForPrediction : IEndpoint
 {
@@ -14,30 +14,21 @@ public class CreateCsvForPrediction : IEndpoint
         group.MapPost("create-bulk", Handler);
         return group;
     }
-    public record CreateCSVRequest(int starting_week, int last_week);
+    public record CreateCSVRequest(int starting_week, int last_week, int[] years);
+
+
+    private bool IsAValidYear(int year) => year > 2014;
     private static async Task<IResult> Handler([FromBody] CreateCSVRequest request, [FromServices] ApplicationDbContext db)
     {
-
         try
         {
             Calendar calendar = new GregorianCalendar();
-
-
-            DateTime[] dateTimes = [
-                new DateTime(2014, 1, 1),
-                new DateTime(2015, 1, 1),
-                new DateTime(2016, 1, 1),
-                new DateTime(2017, 1, 1),
-                new DateTime(2018, 1, 1),
-                new DateTime(2019, 1, 1),
-                new DateTime(2020, 1, 1),
-                new DateTime(2021, 1, 1),
-                new DateTime(2022, 1, 1),
-                new DateTime(2023, 1, 1),
-                new DateTime(2024, 1, 1),    
-                new DateTime(2025, 1, 1),    
-            ];
-
+            
+            DateTime[] dateTimes =
+                request.years
+                    .Select((y) => new DateTime(y, 1, 1))
+                    .ToArray();
+            
             var Years = dateTimes.Select(p => calendar.GetYear(p)).ToArray();
             var psgcCodes = await db.AdministrativeAreas.Where(p => p.GeographicLevel.ToLower() == "bgy").Select(p => p.PsgcCode).ToListAsync();
             List<DateForExtract> dates = [];
@@ -46,6 +37,7 @@ public class CreateCsvForPrediction : IEndpoint
             {
                 return Results.Problem("No barangays found in database");
             }
+            
             foreach (string code in psgcCodes)
             {
                 
@@ -67,8 +59,6 @@ public class CreateCsvForPrediction : IEndpoint
                 }
             }
             using var memoryStream = new MemoryStream();
-
-
             using var writer = new StreamWriter(
                 memoryStream
             );
@@ -86,8 +76,6 @@ public class CreateCsvForPrediction : IEndpoint
         {
             return Results.Problem($"Error generating CSV: {e.Message}");
         }
-        
-        
     }
 }
 

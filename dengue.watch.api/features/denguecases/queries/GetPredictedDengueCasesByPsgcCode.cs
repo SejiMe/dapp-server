@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace dengue.watch.api.features.denguecases.endpoints
+namespace dengue.watch.api.features.denguecases.queries
 {
     public class GetDengueCasesByPsgcCode : IEndpoint
     {
@@ -60,11 +54,11 @@ namespace dengue.watch.api.features.denguecases.endpoints
                         (
                             psgccode, 
                             bgyName,
-                                string.Empty,
+                            p.MonthName ?? string.Empty,
                             p.PredictedIsoYear, 
                             p.PredictedIsoWeek, 
                             p.LaggedIsoWeek, 
-                            p.PredictedIsoWeek, 
+                            p.LaggedIsoYear, 
                             p.PredictedValue,
                             p.ProbabilityOfOutbreak
                         )
@@ -96,10 +90,6 @@ namespace dengue.watch.api.features.denguecases.endpoints
         public record GetDenguePrediction(string psgccode, string barangay_name, string month_name, int iso_year, int iso_week, int lagged_week, int lagged_year ,float value_predicted, double outbreak_probability);
         
         public record GetDenguePredictionResponse(int page_number, int page_size, List<GetDenguePrediction> predictions);
-        // TODO record response
-        
-
-        
         
     }
 }
