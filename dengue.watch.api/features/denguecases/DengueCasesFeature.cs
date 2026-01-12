@@ -44,8 +44,16 @@ public class DengueCasesFeature : IFeature
                 x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila")))
                 )
                 ;
+
+            // Advance prediction coordinator job - run daily but will only process when aggregated snapshots exist
+            var advanceJobKey = new JobKey("AdvancePredictionCoordinator");
+            q.AddJob<AdvancePredictionCoordinatorJob>(opts => opts.WithIdentity(advanceJobKey));
+            q.AddTrigger(opts => opts
+                .ForJob(advanceJobKey)
+                .WithIdentity("AdvancePredictionCoordinator-trigger")
+                .WithCronSchedule("0 0 6 * * ?", x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila")))
+            );
         });
-        
         
         
         return services;

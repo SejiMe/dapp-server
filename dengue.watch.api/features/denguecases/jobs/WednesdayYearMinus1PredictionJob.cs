@@ -13,6 +13,8 @@ public class WednesdayYearMinus1PredictionJob : IJob
          * or lagged minus 2 weeks
          */ 
         
+        
+        
         return Task.CompletedTask;
     }
 }
