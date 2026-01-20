@@ -21,7 +21,13 @@ namespace dengue.watch.api.features.weatherpooling.endpoints
             return group; 
         }
 
-        public record Response(int successCount, int failedCount, int existCount);
+        public record ErrorDetail(string psgcCode, string errorType, string message);
+        public record Response(
+            int successCount,
+            int failedCount,
+            int existCount,
+            List<string> existingPsgcCodes,
+            List<ErrorDetail> errors);
 
         public record Request(DateTime date);
 
@@ -38,6 +44,8 @@ namespace dengue.watch.api.features.weatherpooling.endpoints
         .ToListAsync(cancellationToken);
 
         int success = 0, failed = 0, existing = 0;
+        List<string> existingPsgcCodes = [];
+        List<ErrorDetail> errors = [];
 
         foreach (var (psgc, lat, lon) in barangays)
         {
@@ -58,6 +66,7 @@ namespace dengue.watch.api.features.weatherpooling.endpoints
                 {
                     _logger.LogInformation("Daily weather already exists for {Date} {Psgc}", dayData.Date, psgc);
                     existing++;
+                    existingPsgcCodes.Add(psgc);
                     continue;
                 }
 
@@ -79,6 +88,7 @@ namespace dengue.watch.api.features.weatherpooling.endpoints
             {
                 failed++;
                 _logger.LogError(ex, "Failed processing weather data for {Psgc} \ndetails:\n\t{Message}", psgc, ex.Message);
+                errors.Add(new ErrorDetail(psgc, ex.GetType().Name, ex.Message));
             }
         }
 
@@ -86,7 +96,12 @@ namespace dengue.watch.api.features.weatherpooling.endpoints
             {
                 await _db.SaveChangesAsync();
                 _logger.LogInformation("Finished DailyWeatherPoolingJob at {Time}", DateTimeOffset.UtcNow);
-                Response response = new(successCount: success, failedCount: failed, existCount: existing);
+                Response response = new(
+                    successCount: success,
+                    failedCount: failed,
+                    existCount: existing,
+                    existingPsgcCodes: existingPsgcCodes,
+                    errors: errors);
                 return Results.Ok(response);
             }
             catch (Exception ex)

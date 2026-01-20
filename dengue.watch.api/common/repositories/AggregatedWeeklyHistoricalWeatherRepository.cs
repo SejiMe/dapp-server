@@ -16,7 +16,7 @@ public interface IAggregatedWeeklyHistoricalWeatherRepository
         (int From, int To)? dengueWeekRange,
         CancellationToken cancellationToken = default);
 
-    Task<AggregatedWeeklyHistoricalWeatherSnapshot> GetWeeklyHistoricalWeatherSnapshotAsync(
+    Task<AggregatedWeeklyHistoricalWeatherSnapshot?> GetWeeklyHistoricalWeatherSnapshotAsync(
         string psgc,
         int year,
         int isoweek,
@@ -290,41 +290,55 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
     }
 
     /// <summary>
-    /// 
+    /// Retrieves aggregated weekly historical weather snapshot for a specific PSGC, year, and ISO week.
     /// </summary>
-    /// <param name="psgc"></param>
-    /// <param name="year"></param>
-    /// <param name="isoweek"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    /// <exception cref="ValidationException"></exception> 
-    public async Task<AggregatedWeeklyHistoricalWeatherSnapshot> GetWeeklyHistoricalWeatherSnapshotAsync(string psgc, int year, int isoweek, CancellationToken cancellationToken = default)
+    /// <param name="psgc">The 10-character PSGC code</param>
+    /// <param name="year">The ISO year (must be 2012 or later)</param>
+    /// <param name="isoweek">The ISO week number (1-53)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Aggregated weather snapshot or null if no data is available</returns>
+    /// <exception cref="ValidationException">Thrown when input parameters are invalid</exception> 
+    public async Task<AggregatedWeeklyHistoricalWeatherSnapshot?> GetWeeklyHistoricalWeatherSnapshotAsync(string psgc, int year, int isoweek, CancellationToken cancellationToken = default)
     {
         if (psgc is not { Length: 10 })
             throw new ValidationException("Can't Process this data");
 
-    
-        if(isoweek < 1 ||  isoweek > 53)
+        if (isoweek < 1 || isoweek > 53)
             throw new ValidationException("Can't Process iso week");
         
-        if(year < 2012)
+        if (year < 2012)
             throw new ValidationException("Can't process years 2012 below");
 
-        List<NpgsqlParameter> parameters = new List<NpgsqlParameter>();
-        
-        parameters.Add(new NpgsqlParameter("psgc", psgc));
-        parameters.Add(new NpgsqlParameter("iso_week", isoweek));
-        parameters.Add(new NpgsqlParameter("iso_year", year));
+        List<NpgsqlParameter> parameters =
+        [
+            new NpgsqlParameter("psgc", psgc),
+            new NpgsqlParameter("iso_week", isoweek),
+            new NpgsqlParameter("iso_year", year)
+        ];
         
         QueryInfo queryInfo = new QueryInfo(BaseSelectWeatherData, parameters);
-        
-        
-        
+
         try
         {
+            var weatherDataRecord = await ExecuteWeatherQueryAsync(queryInfo.Sql, queryInfo.Parameters, cancellationToken);
             
-            var weatherDataRecord =  await ExecuteWeatherQueryAsync(queryInfo.Sql, queryInfo.Parameters, cancellationToken);
-            
+            // Check for empty data - return null instead of throwing
+            if (weatherDataRecord.Count == 0)
+            {
+                _logger.LogWarning(
+                    "No weather data found for PSGC {Psgc}, Year {Year}, ISO Week {IsoWeek}.",
+                    psgc, year, isoweek);
+                return null;
+            }
+
+            // Log warning for incomplete week data (less than 7 days)
+            if (weatherDataRecord.Count < 7)
+            {
+                _logger.LogWarning(
+                    "Incomplete weather data ({Count} days) for PSGC {Psgc}, Year {Year}, ISO Week {IsoWeek}. Expected 7 days.",
+                    weatherDataRecord.Count, psgc, year, isoweek);
+            }
+
             var temperatureValues = weatherDataRecord.Select(row => row.Temperature).ToArray();
             var humidityValues = weatherDataRecord.Select(row => row.Humidity).ToArray();
             var precipitationValues = weatherDataRecord.Select(row => row.Precipitation).ToArray();
@@ -371,17 +385,14 @@ public class AggregatedWeeklyHistoricalWeatherRepository : IAggregatedWeeklyHist
                 occurrenceCount,
                 mostCommonDescription,
                 isWetWeek
-                );
+            );
             return aggregatedData;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "Error retrieving weather snapshot for PSGC {Psgc}, Year {Year}, ISO Week {IsoWeek}.", psgc, year, isoweek);
             throw;
         }
-
-        
-       
     }
 
     private async Task<List<RawWeatherRow>> ExecuteWeatherQueryAsync(

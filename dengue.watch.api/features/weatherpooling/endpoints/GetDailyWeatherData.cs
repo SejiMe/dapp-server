@@ -19,7 +19,7 @@ public class GetDailyWeatherDataPooled : IEndpoint
         .WithName("GetWeatherPooledData")
         .WithSummary("Get daily weather data pooled")
         .Produces<IEnumerable<WeatherPooledData>>();
-        return app;
+        return group;
     }
 
     private static async Task<IResult> GetWeatherPooledData([FromServices] ApplicationDbContext _db)

@@ -1,34 +1,33 @@
-using dengue.watch.api.infrastructure.ml;
-using dengue.watch.api.common.repositories;
 using Microsoft.AspNetCore.Http.HttpResults;
+using dengue.watch.api.infrastructure.ml;
 
-namespace dengue.watch.api.features.trainingdatapipeline.endpoints;
+namespace dengue.watch.api.features.denguecases.commands;
 
-public class ManualTriggerAdvancePrediction : IEndpoint
+public class TriggerAdvancePredictionEndpoint : IEndpoint
 {
     public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("training-data")
-            .WithTags("Training Data Pipeline")
-            .WithSummary("Manual trigger for advance prediction coordinator");
+        var group = app.MapGroup("dengue-cases")
+            .WithSummary("Trigger advance prediction coordinator for a PSGC")
+            .WithTags("Dengue Cases");
 
-        group.MapPost("/advance/manual-trigger", Handler)
-            .Produces<Results<Ok<ManualTriggerResponse>, BadRequest<string>, ProblemHttpResult>>();
+        group.MapPost("advance/trigger", Handler)
+            .Produces<Results<Ok<TriggerPredictionResponse>, BadRequest<string>, ProblemHttpResult>>();
 
         return group;
     }
 
-    public record ManualTriggerRequest(string PsgcCode, int AggregatedYear, int AggregatedWeek);
+    public record TriggerRequest(string PsgcCode, int AggregatedYear, int AggregatedWeek);
     
-    public record ManualTriggerResponse(
+    public record TriggerPredictionResponse(
         bool IsSuccess,
         List<PredictionResultRecord> Results,
         List<PredictionErrorRecord> Errors,
         string Message);
 
-    private static async Task<Results<Ok<ManualTriggerResponse>, BadRequest<string>, ProblemHttpResult>> Handler(
-        [FromBody] ManualTriggerRequest request, 
-        [FromServices] IPredictionCoordinator coordinator, 
+    private static async Task<Results<Ok<TriggerPredictionResponse>, BadRequest<string>, ProblemHttpResult>> Handler(
+        [FromBody] TriggerRequest request,
+        [FromServices] IPredictionCoordinator coordinator,
         CancellationToken cancellation = default)
     {
         try
@@ -45,7 +44,7 @@ public class ManualTriggerAdvancePrediction : IEndpoint
                 ? $"Successfully processed {result.Results.Count} predictions for {request.PsgcCode}"
                 : $"Processing completed with {result.Errors.Count} error(s) for {request.PsgcCode}";
 
-            var response = new ManualTriggerResponse(
+            var response = new TriggerPredictionResponse(
                 result.IsSuccess,
                 result.Results,
                 result.Errors,
@@ -57,9 +56,9 @@ public class ManualTriggerAdvancePrediction : IEndpoint
         {
             return TypedResults.BadRequest(ve.Message);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            return TypedResults.Problem($"Unexpected error: {e.Message}");
+            return TypedResults.Problem($"Unexpected error: {ex.Message}");
         }
     }
 }

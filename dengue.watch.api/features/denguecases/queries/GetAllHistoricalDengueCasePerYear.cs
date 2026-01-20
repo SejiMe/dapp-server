@@ -37,7 +37,7 @@ namespace dengue.watch.api.features.denguecases.queries
                         )
                     )
                 .ToList()
-                .OrderByDescending(pz => pz.year);
+                .OrderBy(pz => pz.year);
                 
                 dengueCasesResults.recorded_cases.AddRange(cases);
                 dengueCasesResults.psgccode = null;
