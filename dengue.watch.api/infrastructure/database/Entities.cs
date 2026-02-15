@@ -185,6 +185,49 @@ public class PredictedWeeklyDengueCase
 	public AdministrativeArea? AdministrativeArea { get; set; }
 
 }
+
+/// <summary>
+/// Community preventive advisory entity
+/// </summary>
+public class CommunityPreventiveAdvisory
+{
+	[Key]
+	[DatabaseGenerated(DatabaseGeneratedOption.None)]
+	public Guid Id { get; set; }
+
+	[Required]
+	[MaxLength(200)]
+	public string Title { get; set; } = string.Empty;
+
+	[Required]
+	public string Description { get; set; } = string.Empty;
+
+	[Required]
+	public string ActionPlan { get; set; } = string.Empty;
+
+	[Required]
+	public RiskLevel RiskLevel { get; set; }
+
+	public DateTime CreatedAt { get; set; }
+
+	public DateTime UpdatedAt { get; set; }
+
+	[MaxLength(100)]
+	public string? CreatedBy { get; set; }
+
+	public bool IsActive { get; set; } = true;
+}
+
+/// <summary>
+/// Risk level enumeration
+/// </summary>
+public enum RiskLevel
+{
+	Low,
+	Medium,
+	High,
+	Critical
+}
 public static class EntityModelConfiguration
 {
 	public static void ConfigureEntities(this ModelBuilder modelBuilder)
@@ -282,6 +325,21 @@ public static class EntityModelConfiguration
 			.WithMany(a => a.PredictedWeeklyDengueCases)
 			.HasForeignKey(m => m.PsgcCode)
 			.OnDelete(DeleteBehavior.Restrict);
+		});
+
+		modelBuilder.Entity<CommunityPreventiveAdvisory>(entity =>
+		{
+			entity.ToTable("community_preventive_advisories");
+			entity.HasKey(p => p.Id).HasName("PK_community_preventive_advisories");
+			entity.Property(p => p.Id).HasColumnName("id");
+			entity.Property(p => p.Title).HasColumnName("title").HasMaxLength(200);
+			entity.Property(p => p.Description).HasColumnName("description");
+			entity.Property(p => p.ActionPlan).HasColumnName("action_plan");
+			entity.Property(p => p.RiskLevel).HasColumnName("risk_level");
+			entity.Property(p => p.CreatedAt).HasColumnName("created_at");
+			entity.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+			entity.Property(p => p.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+			entity.Property(p => p.IsActive).HasColumnName("is_active");
 		});
 	}
 }

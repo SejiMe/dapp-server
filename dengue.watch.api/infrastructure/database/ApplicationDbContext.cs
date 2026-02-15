@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<MonthlyDengueCase> MonthlyDengueCases => Set<MonthlyDengueCase>();
 
     public DbSet<PredictedWeeklyDengueCase> PredictedWeeklyDengues => Set<PredictedWeeklyDengueCase>();
+    public DbSet<CommunityPreventiveAdvisory> CommunityPreventiveAdvisories => Set<CommunityPreventiveAdvisory>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
