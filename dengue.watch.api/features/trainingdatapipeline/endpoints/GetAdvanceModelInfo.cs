@@ -10,7 +10,7 @@ public class GetAdvanceModelInfo : IEndpoint
             .WithTags("Training Data Pipeline")
             .WithSummary("Get Advanced Model Info");
 
-        group.MapGet("model-info/basic", Handler);
+        group.MapGet("model-info", Handler);
         return group;
     }
 

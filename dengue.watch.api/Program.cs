@@ -46,6 +46,12 @@ builder.Host.UseSerilog();
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 
+// Configure JSON serializer to handle string-to-enum conversion
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
+
 // Add Scalar for API documentation
 builder.Services.AddOpenApi();
 // Add Quartz scheduler

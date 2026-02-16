@@ -17,11 +17,8 @@ public class GetAdvisories : IEndpoint
             .WithTags("Community Advisories");
 
         group.MapGet("", Handler)
+            .WithName("GetAdvisories")
             .Produces<AdvisoriesListResponse>(200);
-
-        group.MapGet("{id}", GetById.Handler)
-            .Produces<CommunityAdvisoryResponse>(200)
-            .Produces(404);
 
         return group;
     }
@@ -88,41 +85,3 @@ public class GetAdvisories : IEndpoint
     }
 }
 
-/// <summary>
-/// Get a single advisory by ID
-/// </summary>
-public class GetById : IEndpoint
-{
-    public static IEndpointRouteBuilder MapEndpoints(IEndpointRouteBuilder app)
-    {
-        return app;
-    }
-
-    public static async Task<Results<Ok<CommunityAdvisoryResponse>, NotFound>> Handler(
-        Guid id,
-        [FromServices] ApplicationDbContext _db,
-        CancellationToken cancellationToken = default)
-    {
-        var advisory = await _db.CommunityPreventiveAdvisories
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
-
-        if (advisory == null)
-        {
-            return TypedResults.NotFound();
-        }
-
-        var response = new CommunityAdvisoryResponse(
-            advisory.Id,
-            advisory.Title,
-            advisory.Description,
-            advisory.ActionPlan,
-            advisory.RiskLevel.ToString(),
-            advisory.CreatedAt,
-            advisory.UpdatedAt,
-            advisory.CreatedBy,
-            advisory.IsActive
-        );
-
-        return TypedResults.Ok(response);
-    }
-}
