@@ -34,7 +34,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 #if DEBUG
-    builder.WebHost.UseUrls("http://0.0.0.0:5000", "http://localhost:5000");
+    builder.WebHost.UseUrls("http://0.0.0.0:5000","http://localhost:5000");
     builder.WebHost.UseKestrel(options =>
     {
         options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10);
@@ -71,6 +71,11 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 
 // Add SignalR
 builder.Services.AddSignalR();
+
+// Add model info store and training queue/background worker
+builder.Services.AddSingleton<ModelInfoStore>();
+builder.Services.AddSingleton<ITrainingQueue, TrainingQueue>();
+builder.Services.AddHostedService<TrainingBackgroundService>();
 
 // Add in-memory cache
 builder.Services.AddMemoryCache();

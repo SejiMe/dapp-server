@@ -1,0 +1,7 @@
+{
+  "Name": "Advance Dengue Forecast Model",
+  "Version": "1.0.9",
+  "LastTrained": "2026-02-17T15:40:44.2602886Z",
+  "IsLoaded": true,
+  "Description": "Regression model for dengue case prediction with confidence intervals and outbreak probability with Geospatial Capability"
+}

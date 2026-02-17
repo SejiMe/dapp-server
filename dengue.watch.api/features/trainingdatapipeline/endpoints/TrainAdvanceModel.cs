@@ -14,13 +14,13 @@ public class TrainAdvanceModel : IEndpoint
         return group;
     }
 
-    private static async Task<Results<Ok<ModelInfo>, ProblemHttpResult>> Handler([FromServices] IPredictionService<AdvDengueForecastInput, DengueForecastOutput> _dengue)
+    private static async Task<Results<Accepted<string>, ProblemHttpResult>> Handler([FromServices] ITrainingQueue queue)
     {
         try
         {
-            await _dengue.TrainModelAsync();
-            var res = _dengue.GetModelInfo();
-            return TypedResults.Ok(res);
+            var opId = queue.EnqueueTraining();
+            // Return 202 with operation id
+            return TypedResults.Accepted($"/training-data/operations/{opId}", opId);
         }
         catch (Exception e)
         {

@@ -16,14 +16,16 @@ public class AdvanceDengueForecastService : BaseDengueForecast, IPredictionServi
     
     private readonly IWebHostEnvironment _hostEnv;
     private readonly string _metricsPath;
+    private readonly ModelInfoStore _modelInfoStore;
 
 
     public AdvanceDengueForecastService(ILogger<BasicDengueForecastService> logger, IWebHostEnvironment hostEnv,
-        MLContext mlContext) : base(mlContext, logger, hostEnv)
+        MLContext mlContext, ModelInfoStore modelInfoStore) : base(mlContext, logger, hostEnv)
     {
         _mlContext = new MLContext(seed: 1);
         _logger = logger;
         _hostEnv = hostEnv;
+        _modelInfoStore = modelInfoStore;
         _modelPath = Path.Combine(hostEnv.ContentRootPath, "infrastructure", "ml", "models", "AdvDengueForecastModel.zip");
         _metricsPath = Path.Combine(hostEnv.ContentRootPath, "infrastructure", "ml", "models", "model_metrics.json");
 
@@ -217,6 +219,16 @@ public class AdvanceDengueForecastService : BaseDengueForecast, IPredictionServi
         await SaveModelAsync(_model, _modelPath);
         await SaveMetricsAsync(_metricsPath);
 
+        // Update model-info store to reflect successful training and increment version
+        try
+        {
+            _modelInfoStore.SaveNewTrained("Advance Dengue Forecast Model", "Regression model for dengue case prediction with confidence intervals and outbreak probability with Geospatial Capability");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to persist model info after training");
+        }
+
         var modelMetrics = new ModelMetrics(
             Accuracy: metrics.RSquared, // R² as accuracy measure
             MeanAbsoluteError: metrics.MeanAbsoluteError,
@@ -232,9 +244,19 @@ public class AdvanceDengueForecastService : BaseDengueForecast, IPredictionServi
 
     public ModelInfo GetModelInfo()
     {
+        try
+        {
+            var info = _modelInfoStore.Load();
+            if (info != null) return info;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load persisted model info");
+        }
+
         return new ModelInfo(
             Name: "Advance Dengue Forecast Model",
-            Version: "1.0.0",
+            Version: File.Exists(_modelPath) ? "1.0.0" : "0.0.0",
             LastTrained: File.Exists(_modelPath) ? File.GetLastWriteTime(_modelPath) : DateTime.MinValue,
             IsLoaded: _model != null,
             Description: "Regression model for dengue case prediction with confidence intervals and outbreak probability with Geospatial Capability"

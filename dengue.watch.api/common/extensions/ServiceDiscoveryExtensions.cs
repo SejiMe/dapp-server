@@ -143,7 +143,8 @@ public static class ServiceDiscoveryExtensions
     {
         assembly ??= Assembly.GetCallingAssembly();
 
-        var hubGroup = app.MapGroup("/hub/");
+        // Map hubs using the root app so hubs can declare their own routes (e.g. /hubs/notifications)
+        var hubGroup = app;
 
         var hubTypes = assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && t.GetInterfaces().Contains(typeof(IHub)))
